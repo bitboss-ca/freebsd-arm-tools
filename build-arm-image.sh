@@ -39,7 +39,7 @@ usage() {
 }
 
 #
-#		Read the options
+#	Read the options
 #
 while getopts ":bhqum:s:g:" opt; do
 	case $opt in
@@ -78,7 +78,7 @@ done
 shift $((OPTIND-1))
 
 #
-# Setup
+# 	Setup
 #
 export GPU_MEM=$GPU_MEM_SIZE
 export PI_USER=pi
@@ -136,7 +136,7 @@ if [ $SVN_UPDATE ]; then
 fi
 
 #
-#		Get SVN Revision
+#	Get SVN Revision
 #
 curdir=`pwd`
 cd $SRCROOT
@@ -179,6 +179,9 @@ if [ $PREFLIGHT ]; then
 	read x < /dev/tty
 fi
 
+#
+#	Build From Source
+#
 if [ ! $NOBUILD ]; then
 	
 	make -C $SRCROOT kernel-toolchain
@@ -205,6 +208,9 @@ if [ ! $NOBUILD ]; then
 	fi
 fi
 
+#
+#	Prepare Image File
+#
 rm -f $IMG
 dd if=/dev/zero of=$IMG bs=128M count=$IMG_SIZE_COUNT
 MDFILE=`mdconfig -a -f $IMG`
@@ -245,6 +251,9 @@ tunefs -N enable /dev/${MDFILE}s2a
 
 mount /dev/${MDFILE}s2a $MNTDIR
 
+#
+#	Install to Image File From Source
+#
 make -C $SRCROOT DESTDIR=$MNTDIR -DDB_FROM_SRC installkernel
 make -C $SRCROOT DESTDIR=$MNTDIR -DDB_FROM_SRC installworld
 make -C $SRCROOT DESTDIR=$MNTDIR -DDB_FROM_SRC distribution
@@ -290,19 +299,19 @@ if [ ! $NOTIFY == 'NO' ]; then
 	echo `date "+%F %r"` | mail -s "${IMG_NAME}: Install Complete" $NOTIFY
 fi
 
-#
-#	Tar Up The Image and Local Keys
-#
-
-# Move the image and keys into the current dir
+# Move the image into the current dir
 mv $IMG $IMG_NAME
 
 # SHA Sum
 shasum -a256 $IMG_NAME > $IMG_NAME.sha256.txt
 
-# Tar up the dir with image
+# Tar up the image with its SHA sum
 tar -cvzf $IMG_NAME.tgz $IMG_NAME*
 
 # Clean Up
 rm $IMG_NAME
 rm $IMG_NAME.sha256.txt
+
+if [ ! $NOTIFY == 'NO' ]; then
+	echo `date "+%F %r"` | mail -s "${IMG_NAME}: Image Ready" $NOTIFY
+fi
