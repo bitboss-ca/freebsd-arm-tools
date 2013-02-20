@@ -2,14 +2,6 @@
 set -e
 
 #
-#	Root Check
-#
-if [ `whoami` != "root" ]; then
-	echo 'Please run me as root.'
-	exit
-fi
-
-#
 #	Defaults
 #
 PREFLIGHT='YES'
@@ -76,6 +68,14 @@ while getopts ":bhqum:s:g:" opt; do
 	esac
 done
 shift $((OPTIND-1))
+
+#
+#       Root Check
+#
+if [ `whoami` != "root" ]; then
+        echo 'Please run me as root.'
+        exit
+fi
 
 #
 # 	Setup
