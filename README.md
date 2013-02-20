@@ -89,7 +89,7 @@ for the example below.  I started with a 2G image written to a 16G SDHC card.
 
 ### Caution
 It's important that you read and _understand_ these instructions before you dive in.  If you follow 
-to the bottom, but don't get it, so a little research.  Start by reading the FreeBSD man pages for
+to the bottom, but don't get it, do a little research.  Start by reading the FreeBSD man pages for
 gpart and growfs.
 
 ### Procedure
