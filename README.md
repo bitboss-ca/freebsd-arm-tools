@@ -75,7 +75,7 @@ Password:
 </pre>
 
 Resizing Partitions
--------------------
+-------------------'
 It's nice to use 1GB images because they are small and take less time to write to yoru SD card.  But,
 once you boot your image, you will find you only have access to 1GB, even if your card is say 16GB in
 size.  So, next step is to resize (expand) your FreeBSD installation to fit your SD card.
@@ -83,10 +83,19 @@ size.  So, next step is to resize (expand) your FreeBSD installation to fit your
 ### Requirements
 You cannot resize the partitions (slices) on your SD card while they are mounted, so you will have to
 plug your card into a reader on another machine that has gpart.  I used a FreeBSD 8.3 RELEASE machine 
-for the example below.
+for the example below.  I started with a 2G image written to a 16G SDHC card.
+
+### Caution
+It's important that you read and _understand_ these instructions before you dive in.  If you follow 
+to the bottom, but don't get it, so a little research.  Start by reading the FreeBSD man pages for
+gpart and growfs.
+
+### Procedure
+We have our SDHC card plugged in to our host machine with a 2GB image written to it.  Let's take a 
+look...
 
 ```bash
-# gpart show
+enzo# gpart show
 
 	...SNIPPED HOST BOOT DRIVE OUTPUT...
 
@@ -108,32 +117,18 @@ for the example below.
         0  4128705                       1  freebsd-ufs  (2G)
 ```
 
+First thing we need to do is effectively expand index 2 of da1 (above) to use up the free 12G 
+that appears after it. So (below), we give the command to resize index 2 `-i2` of `da1`.  Note 
+that `-a1` tells gpart to align to 1MB.
+
 ```bash
 enzo# gpart resize -a1 -i2 da1
 da1s2 resized
+
 enzo# gpart show
 
 	...SNIPPED HOST BOOT DRIVE OUTPUT...
 
-=>      63  31047617  da1  MBR  (14G)
-        63     65520    1  !12  [active]  (32M)
-     65583  30982077    2  freebsd  (14G)
-  31047660        20       - free -  (10k)
-
-=>    0  65520  da1s1  EBR  (32M)
-      0  65520         - free -  (32M)
-
-=>      0  4128705  da1s2  BSD  (14G)
-        0  4128705      1  freebsd-ufs  (2G)
-
-=>    0  65520  msdosfs/BOOT  EBR  (32M)
-      0  65520                - free -  (32M)
-
-=>      0  4128705  ufsid/5125063d5dfe4cf0  BSD  (2G)
-        0  4128705                       1  freebsd-ufs  (2G)
-```
-
-```bash
 enzo# gpart show da1
 =>      63  31047617  da1  MBR  (14G)
         63     65520    1  !12  [active]  (32M)
@@ -144,6 +139,9 @@ enzo# gpart show da1s2
 =>      0  4128705  da1s2  BSD  (14G)
         0  4128705      1  freebsd-ufs  (2G)
 ```
+
+Now we see (above) that free space is available to index 2 of da1 (da1s2).  But, the freebsd-ufs 
+slice is still only 2G.  So, (below) we grow da1s2...
 
 ```bash
 enzo# growfs da1s2
@@ -212,6 +210,5 @@ enzo# gpart show
   29917184      2001         - free -  (1M)
   29919185   1048576      2  freebsd-swap  (512M)
   30967761     14316         - free -  (7M)
-
 ```
 
