@@ -4,7 +4,9 @@ FreeBSD ARM Tools
 Static pkg Tool: pkg-static
 ---------------------------
 Built according to instructions noted by David Quattlebaum's comment on [Gonzos](http://kernelnomicon.org/) post [Packages(*) for Rasberry Pi(**)](http://kernelnomicon.org/?p=261).  
-This handy tool will allow you to bootstrap the pkg system for FreeBSDlike so: have, since the original pkg package is not currently available via FreeBSD servers.  SHA sum is provided.
+This handy tool will allow you to bootstrap the pkg system for FreeBSD as in the example below, even though the original
+original pkg package is not currently available via FreeBSD servers.  Use it to install your first package... pkg!  SHA 
+sum is provided.
 
 Package Repositories (UNOFFICIAL)
 ---------------------------------
