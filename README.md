@@ -39,8 +39,8 @@ of the script, so you can build, for example, a number of images of different si
 		-u Update source via svn before build
 </pre>
 
-Working With Images and SD Cards
---------------------------------
+Extracting and Writing Images
+-----------------------------
 Extracting an image, verifying its checksum and writing it to an SD card might look like something like this:
 <pre>
 $ tar -xvzf /Users/dturner/Downloads/FreeBSD-HEAD-r247020-ARMv6-1G.img.tgz
@@ -73,3 +73,145 @@ Unmount of all volumes on disk2 was successful
 $ sudo dd if=FreeBSD-HEAD-r247020-ARMv6-1G.img of=/dev/disk2 bs=1m
 Password:
 </pre>
+
+Resizing Partitions
+-------------------
+It's nice to use 1GB images because they are small and take less time to write to yoru SD card.  But,
+once you boot your image, you will find you only have access to 1GB, even if your card is say 16GB in
+size.  So, next step is to resize (expand) your FreeBSD installation to fit your SD card.
+
+### Requirements
+You cannot resize the partitions (slices) on your SD card while they are mounted, so you will have to
+plug your card into a reader on another machine that has gpart.  I used a FreeBSD 8.3 RELEASE machine 
+for the example below.
+
+```bash
+# gpart show
+
+	...SNIPPED HOST BOOT DRIVE OUTPUT...
+
+=>      63  31047617  da1  MBR  (14G)
+        63     65520    1  !12  [active]  (32M)
+     65583   4128705    2  freebsd  (2G)
+   4194288  26853392       - free -  (12G)
+
+=>    0  65520  da1s1  EBR  (32M)
+      0  65520         - free -  (32M)
+
+=>      0  4128705  da1s2  BSD  (2G)
+        0  4128705      1  freebsd-ufs  (2G)
+
+=>    0  65520  msdosfs/BOOT  EBR  (32M)
+      0  65520                - free -  (32M)
+
+=>      0  4128705  ufsid/5125063d5dfe4cf0  BSD  (2G)
+        0  4128705                       1  freebsd-ufs  (2G)
+```
+
+```bash
+enzo# gpart resize -a1 -i2 da1
+da1s2 resized
+enzo# gpart show
+
+	...SNIPPED HOST BOOT DRIVE OUTPUT...
+
+=>      63  31047617  da1  MBR  (14G)
+        63     65520    1  !12  [active]  (32M)
+     65583  30982077    2  freebsd  (14G)
+  31047660        20       - free -  (10k)
+
+=>    0  65520  da1s1  EBR  (32M)
+      0  65520         - free -  (32M)
+
+=>      0  4128705  da1s2  BSD  (14G)
+        0  4128705      1  freebsd-ufs  (2G)
+
+=>    0  65520  msdosfs/BOOT  EBR  (32M)
+      0  65520                - free -  (32M)
+
+=>      0  4128705  ufsid/5125063d5dfe4cf0  BSD  (2G)
+        0  4128705                       1  freebsd-ufs  (2G)
+```
+
+```bash
+enzo# gpart show da1
+=>      63  31047617  da1  MBR  (14G)
+        63     65520    1  !12  [active]  (32M)
+     65583  30982077    2  freebsd  (14G)
+  31047660        20       - free -  (10k)
+
+enzo# gpart show da1s2
+=>      0  4128705  da1s2  BSD  (14G)
+        0  4128705      1  freebsd-ufs  (2G)
+```
+
+```bash
+enzo# growfs da1s2
+We strongly recommend you to make a backup before growing the Filesystem
+
+ Did you backup your data (Yes/No) ? Yes
+new file systemsize is: 3872759 frags
+Warning: 16312 sector(s) cannot be allocated.
+growfs: 15120.0MB (30965760 sectors) block size 32768, fragment size 4096
+	using 30 cylinder groups of 504.00MB, 16128 blks, 64512 inodes.
+	with soft updates
+super-block backups (for fsck -b #) at:
+ 4128960, 5161152, 6193344, 7225536, 8257728, 9289920, 10322112, 11354304, 12386496, 13418688, 14450880, 15483072, 16515264, 17547456, 18579648, 19611840,
+ 20644032, 21676224, 22708416, 23740608, 24772800, 25804992, 26837184, 27869376, 28901568, 29933760
+enzo# gpart show da1s2
+=>       0  30982077  da1s2  BSD  (14G)
+         0   4128705      1  freebsd-ufs  (2G)
+   4128705  26853372         - free -  (12G)
+```
+
+At this point we need to stop and think about how large to make the new space.  Note that in the 
+last command we did not specify a size.  By default the growfs command will take up whatever 
+remaining space that it can.  Look at the output above: growfs tells us that some sectors cannot 
+be allocated, and right below that, tells us the size, in megabytes of the new filesystem.  This
+is great, because we are going to use that number to calculate the size of the new freebsd slice.
+
+So, let's say we want to have a 512MB swap space and enlarge the FreeBSD space to use up the rest.  
+now we can take that 15120.0MB reported above, subtract 512MB, and  get 14608.
+
+```bash
+enzo# gpart resize -a1 -s14608m -i1 da1s2
+da1s2a resized
+enzo# gpart show da1s2
+=>       0  30982077  da1s2  BSD  (14G)
+         0  29917184      1  freebsd-ufs  (14G)
+  29917184   1064893         - free -  (520M)
+
+enzo# gpart add -t freebsd-swap -a1M -s512M da1s2
+da1s2b added
+enzo# gpart show da1s2
+=>       0  30982077  da1s2  BSD  (14G)
+         0  29917184      1  freebsd-ufs  (14G)
+  29917184      2001         - free -  (1M)
+  29919185   1048576      2  freebsd-swap  (512M)
+  30967761     14316         - free -  (7M)
+```
+
+```bash
+enzo# gpart show
+
+	...SNIPPED HOST BOOT DRIVE OUTPUT...
+
+=>      63  31047617  da1  MBR  (14G)
+        63     65520    1  !12  [active]  (32M)
+     65583  30982077    2  freebsd  (14G)
+  31047660        20       - free -  (10k)
+
+=>    0  65520  da1s1  EBR  (32M)
+      0  65520         - free -  (32M)
+
+=>    0  65520  msdosfs/BOOT  EBR  (32M)
+      0  65520                - free -  (32M)
+
+=>       0  30982077  da1s2  BSD  (14G)
+         0  29917184      1  freebsd-ufs  (14G)
+  29917184      2001         - free -  (1M)
+  29919185   1048576      2  freebsd-swap  (512M)
+  30967761     14316         - free -  (7M)
+
+```
+
