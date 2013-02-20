@@ -15,9 +15,9 @@ OR
 Using Packages
 --------------
 Saves a ton of time on the Raspberry Pi, like so:
-> # echo 'PACKAGESITE: http://people.freebsd.org/~gonzo/arm/pkg/' > /usr/local/etc/pkg.conf 
-> # fetch -o pkg.txz http://people.freebsd.org/~gonzo/arm/pkg/pkg-1.0.4_1.txz
-> # ./pkg-static add pkg-1.0.4_1.txz
+> echo 'PACKAGESITE: http://people.freebsd.org/~gonzo/arm/pkg/' > /usr/local/etc/pkg.conf 
+> fetch -o pkg.txz http://people.freebsd.org/~gonzo/arm/pkg/pkg-1.0.4_1.txz
+> ./pkg-static add pkg-1.0.4_1.txz
 
 Build Script
 ------------
