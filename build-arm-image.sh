@@ -2,17 +2,18 @@
 set -e
 
 #
-#	Defaults
+# Defaults
 #
 PREFLIGHT='YES'
 IMG_SIZE=1
 GPU_MEM_SIZE=128
+SVN_CHECKOUT=''
 SVN_UPDATE=''
 NOBUILD=''
 NOTIFY='NO'
 
 #
-#	Usage Message
+# Usage Message
 #
 usage() {
 	echo "
@@ -31,7 +32,7 @@ usage() {
 }
 
 #
-#	Read the options
+# Read the options
 #
 while getopts ":bhqum:s:g:" opt; do
 	case $opt in
@@ -70,7 +71,7 @@ done
 shift $((OPTIND-1))
 
 #
-#       Root Check
+# Root Check
 #
 if [ `whoami` != "root" ]; then
         echo 'Please run me as root.'
@@ -80,6 +81,7 @@ fi
 #
 # 	Setup
 #
+curdir=`pwd`
 export GPU_MEM=$GPU_MEM_SIZE
 export PI_USER=pi
 export PI_USER_PASSWORD=raspberry
@@ -96,7 +98,7 @@ UBLDR=`realpath $MAKEOBJDIRPREFIX`/arm.armv6/`realpath $SRCROOT`/sys/boot/arm/ub
 DTB=`realpath $MAKEOBJDIRPREFIX`/arm.armv6/`realpath $SRCROOT`/sys/$KERNCONF/bcm2835-rpi-b.dtb
 
 #
-#	Sanity Checks
+# Sanity Checks
 #
 if [ -z "$MNTDIR" ]; then
 echo "MNTDIR is not set properly"
@@ -104,7 +106,7 @@ exit 1
 fi
 
 #
-#	Infrastructure checks
+# Infrastructure checks
 #
 if [ ! -d $SRCROOT ]; then
 	echo -n "Creating SRCROOT: ${SRCROOT}..."
@@ -126,36 +128,26 @@ if [ ! -d ${MAKEOBJDIRPREFIX} ]; then
 fi
 
 #
-#	Update Source
+# Get SVN Revision
 #
-if [ $SVN_UPDATE ]; then
-	curdir=`pwd`
-	cd $SRCROOT
-	svn up
-	cd $curdir
-fi
-
-#
-#	Get SVN Revision
-#
-curdir=`pwd`
 cd $SRCROOT
-FREEBSD_SVN_REVISION=$(svn info |grep '^Revision' | awk '{print $2}')
+CURRENT_SVN_REVISION=$(svn info |grep '^Revision' | awk '{print $2}')
 cd $curdir
 
 #
-#	Set The Image Filename
+# Set The Image Filename
 #
-IMG_NAME="FreeBSD-HEAD-r${FREEBSD_SVN_REVISION}-ARMv6-${IMG_SIZE}G.img"
+IMG_NAME="FreeBSD-HEAD-r${CURRENT_SVN_REVISION}-ARMv6-${IMG_SIZE}G.img"
+
 
 #
-#	Pre-Flight Confirmation
+# Pre-Flight Confirmation
 #
 if [ $PREFLIGHT ]; then
-	echo "-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-"
-	echo "-=-=-=-=-=-=- PREFLIGHT CHECK -=-=-=-=-=-=-"
-	echo "-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-"
-	echo "FREEBSD_SVN_REVISION: ${FREEBSD_SVN_REVISION}"
+	echo "-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-"
+	echo "-=-=-=-=-=-=-=- PREFLIGHT CHECK -=-=-=-=-=-=-=-"
+	echo "-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-"
+	echo "CURRENT_SVN_REVISION: ${CURRENT_SVN_REVISION}"
 	echo "            IMG_NAME: ${IMG_NAME}"
 	echo "            IMG_SIZE: $IMG_SIZE"
 	echo "      IMG_SIZE_COUNT: $IMG_SIZE_COUNT"
@@ -164,6 +156,7 @@ if [ $PREFLIGHT ]; then
 	echo "    PI_USER_PASSWORD: $PI_USER_PASSWORD"
 	echo "              NOTIFY: $NOTIFY"
 	echo "             NOBUILD: $NOBUILD"
+	echo "       SOURCE UPDATE: $SVN_UPDATE"
 	echo "              MNTDIR: $MNTDIR"
 	echo "             SRCROOT: $SRCROOT"
 	echo "         MAKESYSPATH: $MAKESYSPATH"
@@ -180,7 +173,43 @@ if [ $PREFLIGHT ]; then
 fi
 
 #
-#	Build From Source
+#		Checkout Source If It's Not There 
+#
+if [ -z "${CURRENT_SVN_REVISION}" ]; then
+	SVN_CHECKOUT='YES'
+	cd $SRCROOT
+	svn co svn://svn.freebsd.org/base/head/ ./
+	cd $curdir
+fi
+
+#
+#		Update Source
+#
+if [ $SVN_UPDATE ]; then
+	cd $SRCROOT
+	svn up
+	cd $curdir
+fi
+
+#
+#	Get SVN Revision (Again)
+#
+cd $SRCROOT
+NEW_SVN_REVISION=$(svn info |grep '^Revision' | awk '{print $2}')
+cd $curdir
+
+if [ "${NEW_SVN_REVISION}" -ne  "${CURRENT_SVN_REVISION}" ]; then
+	#
+	#       Update To New Image Filename
+	#
+	IMG_NAME="FreeBSD-HEAD-r${NEW_SVN_REVISION}-ARMv6-${IMG_SIZE}G.img"
+	if [ ! $NOTIFY == 'NO' ]; then
+	        echo `date "+%F %r"` | mail -s "Source co / up complete, new name: ${IMG_NAME}" $NOTIFY
+	fi
+fi
+
+#
+# Build From Source
 #
 if [ ! $NOBUILD ]; then
 	
@@ -209,7 +238,7 @@ if [ ! $NOBUILD ]; then
 fi
 
 #
-#	Prepare Image File
+# Prepare Image File
 #
 rm -f $IMG
 dd if=/dev/zero of=$IMG bs=128M count=$IMG_SIZE_COUNT
@@ -252,7 +281,7 @@ tunefs -N enable /dev/${MDFILE}s2a
 mount /dev/${MDFILE}s2a $MNTDIR
 
 #
-#	Install to Image File From Source
+# Install to Image File From Source, add Basic Config
 #
 make -C $SRCROOT DESTDIR=$MNTDIR -DDB_FROM_SRC installkernel
 make -C $SRCROOT DESTDIR=$MNTDIR -DDB_FROM_SRC installworld
@@ -299,7 +328,9 @@ if [ ! $NOTIFY == 'NO' ]; then
 	echo `date "+%F %r"` | mail -s "${IMG_NAME}: Install Complete" $NOTIFY
 fi
 
-# Move the image into the current dir
+#
+# Move the image into the current dir, create checksum and tar it up
+#
 mv $IMG $IMG_NAME
 
 # SHA Sum

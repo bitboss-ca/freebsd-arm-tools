@@ -1,6 +1,7 @@
 TODO
 ====
 * <del>Should be able to read help message without being root</del>
-* Should not have to wait for source update before preflight check
-* Add notification after source update (once it has been moved after the pre-flight)
+* <del>Should not have to wait for source update before preflight check</del>
+* <del>Add notification after source update (once it has been moved after the pre-flight)</del>
+* User should confirm checkout of source in case there has been an error in directory setup.
 
