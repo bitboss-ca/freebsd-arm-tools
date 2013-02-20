@@ -9,7 +9,9 @@ This handy tool will allow you to bootstrap the pkg system for FreeBSDlike so: h
 Package Repositories (UNOFFICIAL)
 ---------------------------------
 > http://people.freebsd.org/~gonzo/arm/pkg/
+
 OR
+
 > http://wd1cks.org/RPi/packages/All/
 
 Using Packages
@@ -75,7 +77,7 @@ Password:
 </pre>
 
 Resizing Partitions
--------------------'
+-------------------
 It's nice to use 1GB images because they are small and take less time to write to yoru SD card.  But,
 once you boot your image, you will find you only have access to 1GB, even if your card is say 16GB in
 size.  So, next step is to resize (expand) your FreeBSD installation to fit your SD card.
