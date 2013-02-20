@@ -33,7 +33,7 @@ usage() {
 		-s Image size in GB
 		-m Email address to notify
 		-g GPU Mem Size in MB, must be 32,64,128 (?)
-		-u Update source via svn before build\n\n
+		-u Update source via svn before build
 		
 		"
 }
@@ -306,5 +306,3 @@ tar -cvzf $IMG_NAME.tgz $IMG_NAME*
 # Clean Up
 rm $IMG_NAME
 rm $IMG_NAME.sha256.txt
-
-
