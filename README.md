@@ -170,9 +170,9 @@ enzo# gpart show da1s2
 last command we did not specify a size.  By default the growfs command will take up whatever 
 remaining space that it can.  Look at the output above: growfs tells us that some sectors cannot 
 be allocated, and right below that, tells us the size, in megabytes of the new filesystem.  This
-is great, because we are going to use that number to calculate the size of the new freebsd slice.
+is great, because we are going to use that number to calculate the size of the new freebsd slice.</del>
 
-So, let's say we want to have a 512MB swap space and enlarge the FreeBSD space to use up the rest.  
+<del>So, let's say we want to have a 512MB swap space and enlarge the FreeBSD space to use up the rest.  
 now we can take that 15120.0MB reported above, subtract 512MB, and  get 14608.</del>
 
 I have not been able to get the above to work reliably, at this time, I all know that works is to expand 
