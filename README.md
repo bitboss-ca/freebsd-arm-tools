@@ -166,53 +166,19 @@ enzo# gpart show da1s2
    4128705  26853372         - free -  (12G)
 ```
 
-At this point we need to stop and think about how large to make the new space.  Note that in the 
+<del>At this point we need to stop and think about how large to make the new space.  Note that in the 
 last command we did not specify a size.  By default the growfs command will take up whatever 
 remaining space that it can.  Look at the output above: growfs tells us that some sectors cannot 
 be allocated, and right below that, tells us the size, in megabytes of the new filesystem.  This
 is great, because we are going to use that number to calculate the size of the new freebsd slice.
 
 So, let's say we want to have a 512MB swap space and enlarge the FreeBSD space to use up the rest.  
-now we can take that 15120.0MB reported above, subtract 512MB, and  get 14608.
+now we can take that 15120.0MB reported above, subtract 512MB, and  get 14608.</del>
+
+I have not been able to get the above to work reliably, at this time, I all know that works is to expand 
+the freebsd-ufs slice to take up the new space.  More on adding a swap space later.
 
 ```bash
-enzo# gpart resize -a1 -s14608m -i1 da1s2
+enzo# gpart resize -a1 -i1 da1s2
 da1s2a resized
-enzo# gpart show da1s2
-=>       0  30982077  da1s2  BSD  (14G)
-         0  29917184      1  freebsd-ufs  (14G)
-  29917184   1064893         - free -  (520M)
-
-enzo# gpart add -t freebsd-swap -a1M -s512M da1s2
-da1s2b added
-enzo# gpart show da1s2
-=>       0  30982077  da1s2  BSD  (14G)
-         0  29917184      1  freebsd-ufs  (14G)
-  29917184      2001         - free -  (1M)
-  29919185   1048576      2  freebsd-swap  (512M)
-  30967761     14316         - free -  (7M)
 ```
-
-```bash
-enzo# gpart show
-
-	...SNIPPED HOST BOOT DRIVE OUTPUT...
-
-=>      63  31047617  da1  MBR  (14G)
-        63     65520    1  !12  [active]  (32M)
-     65583  30982077    2  freebsd  (14G)
-  31047660        20       - free -  (10k)
-
-=>    0  65520  da1s1  EBR  (32M)
-      0  65520         - free -  (32M)
-
-=>    0  65520  msdosfs/BOOT  EBR  (32M)
-      0  65520                - free -  (32M)
-
-=>       0  30982077  da1s2  BSD  (14G)
-         0  29917184      1  freebsd-ufs  (14G)
-  29917184      2001         - free -  (1M)
-  29919185   1048576      2  freebsd-swap  (512M)
-  30967761     14316         - free -  (7M)
-```
-
