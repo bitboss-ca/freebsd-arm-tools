@@ -9,7 +9,7 @@ IMG_SIZE=1
 GPU_MEM_SIZE=128
 SVN_CHECKOUT=''
 SVN_UPDATE=''
-NOBUILD=''
+BUILD='YES'
 NOTIFY='NO'
 
 #
@@ -41,7 +41,7 @@ while getopts ":bhqum:s:g:" opt; do
 			exit
 			;;
 		b)
-			NOBUILD='YES'
+			BUILD='NO'
 			;;
 		q)
 			PREFLIGHT=''
@@ -155,8 +155,8 @@ if [ $PREFLIGHT ]; then
 	echo "             PI_USER: $PI_USER"
 	echo "    PI_USER_PASSWORD: $PI_USER_PASSWORD"
 	echo "              NOTIFY: $NOTIFY"
-	echo "             NOBUILD: $NOBUILD"
 	echo "       SOURCE UPDATE: $SVN_UPDATE"
+	echo "               BUILD: $BUILD"
 	echo "              MNTDIR: $MNTDIR"
 	echo "             SRCROOT: $SRCROOT"
 	echo "         MAKESYSPATH: $MAKESYSPATH"
@@ -211,7 +211,7 @@ fi
 #
 # Build From Source
 #
-if [ ! $NOBUILD ]; then
+if [ $BUILD == 'YES' ]; then
 	
 	make -C $SRCROOT kernel-toolchain
 	if [ ! $NOTIFY == 'NO' ]; then
