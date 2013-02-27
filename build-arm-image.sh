@@ -8,7 +8,7 @@ PREFLIGHT='YES'
 IMG_SIZE=1
 GPU_MEM_SIZE=128
 SVN_CHECKOUT=''
-SVN_UPDATE=''
+SVN_UPDATE='NO'
 BUILD='YES'
 NOTIFY='NO'
 
@@ -185,7 +185,7 @@ fi
 #
 #		Update Source
 #
-if [ $SVN_UPDATE ]; then
+if [ $SVN_UPDATE == 'YES' ]; then
 	cd $SRCROOT
 	svn up
 	cd $curdir
@@ -204,7 +204,7 @@ if [ "${NEW_SVN_REVISION}" -ne  "${CURRENT_SVN_REVISION}" ]; then
 	#
 	IMG_NAME="FreeBSD-HEAD-r${NEW_SVN_REVISION}-ARMv6-${IMG_SIZE}G.img"
 	if [ ! $NOTIFY == 'NO' ]; then
-	        echo `date "+%F %r"` | mail -s "Source co / up complete, new name: ${IMG_NAME}" $NOTIFY
+	        echo `date "+%F %r"` | mail -s "Source checkout / update complete, new name: ${IMG_NAME}" $NOTIFY
 	fi
 fi
 
@@ -240,6 +240,9 @@ fi
 #
 # Prepare Image File
 #
+if [ ! $NOTIFY == 'NO' ]; then
+	echo -n "Creating image file..."
+fi
 rm -f $IMG
 dd if=/dev/zero of=$IMG bs=128M count=$IMG_SIZE_COUNT
 MDFILE=`mdconfig -a -f $IMG`
@@ -262,10 +265,14 @@ cp $UBLDR $MNTDIR
 cp $DTB $MNTDIR/devtree.dat
 umount $MNTDIR
 
+IMG_SWAP_SIZE=512
+IMG_FBSD_SIZE=$(( ( $IMG_SIZE * 1024 ) - 32 - $IMG_SWAP_SIZE - 1 ))
+
 # FreeBSD partition
 gpart add -t freebsd ${MDFILE}
 gpart create -s BSD ${MDFILE}s2
-gpart add -t freebsd-ufs ${MDFILE}s2
+gpart add -t freebsd-ufs -s ${IMG_FBSD_SIZE}M ${MDFILE}s2
+gpart add -t freebsd-swap -s ${IMG_SWAP_SIZE}M ${MDFILE}s2
 newfs /dev/${MDFILE}s2a
 
 # Turn on Softupdates
@@ -277,6 +284,11 @@ tunefs -n enable /dev/${MDFILE}s2a
 tunefs -j enable -S 4194304 /dev/${MDFILE}s2a
 # Turn on NFSv4 ACLs
 tunefs -N enable /dev/${MDFILE}s2a
+if [ ! $NOTIFY == 'NO' ]; then
+	echo "Done."
+fi
+
+
 
 mount /dev/${MDFILE}s2a $MNTDIR
 
