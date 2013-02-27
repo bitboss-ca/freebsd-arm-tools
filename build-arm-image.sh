@@ -6,6 +6,7 @@ set -e
 #
 PREFLIGHT='YES'
 IMG_SIZE=1
+IMG_SWAP_SIZE=0
 GPU_MEM_SIZE=128
 SVN_CHECKOUT=''
 SVN_UPDATE='NO'
@@ -24,6 +25,7 @@ usage() {
 		-b No build, just create image from previously-built source
 		-q Quiet, no pre-flight check
 		-s Image size in GB
+		-w Swap size in MB, default no swap (0)
 		-m Email address to notify
 		-g GPU Mem Size in MB, must be 32,64,128 (?)
 		-u Update source via svn before build
@@ -34,7 +36,7 @@ usage() {
 #
 # Read the options
 #
-while getopts ":bhqum:s:g:" opt; do
+while getopts ":bhqum:s:w:g:" opt; do
 	case $opt in
 		h)
 			usage
@@ -48,6 +50,9 @@ while getopts ":bhqum:s:g:" opt; do
 			;;
 		s)
 			IMG_SIZE=$OPTARG
+			;;
+		w)
+			IMG_SWAP_SIZE=$OPTARG
 			;;
 		m)
 			NOTIFY=$OPTARG
@@ -96,6 +101,7 @@ export KERNCONF=RPI-B
 KERNEL=`realpath $MAKEOBJDIRPREFIX`/arm.armv6/`realpath $SRCROOT`/sys/$KERNCONF/kernel
 UBLDR=`realpath $MAKEOBJDIRPREFIX`/arm.armv6/`realpath $SRCROOT`/sys/boot/arm/uboot/ubldr
 DTB=`realpath $MAKEOBJDIRPREFIX`/arm.armv6/`realpath $SRCROOT`/sys/$KERNCONF/bcm2835-rpi-b.dtb
+IMG_FBSD_SIZE=$(( ( $IMG_SIZE * 1024 ) - 32 - $IMG_SWAP_SIZE - 1 ))
 
 #
 # Sanity Checks
@@ -151,6 +157,8 @@ if [ $PREFLIGHT ]; then
 	echo "            IMG_NAME: ${IMG_NAME}"
 	echo "            IMG_SIZE: $IMG_SIZE"
 	echo "      IMG_SIZE_COUNT: $IMG_SIZE_COUNT"
+	echo "       IMG_SWAP_SIZE: $IMG_SWAP_SIZE"
+	echo "       IMG_FBSD_SIZE: $IMG_FBSD_SIZE"
 	echo "             GPU_MEM: $GPU_MEM"
 	echo "             PI_USER: $PI_USER"
 	echo "    PI_USER_PASSWORD: $PI_USER_PASSWORD"
@@ -265,14 +273,15 @@ cp $UBLDR $MNTDIR
 cp $DTB $MNTDIR/devtree.dat
 umount $MNTDIR
 
-IMG_SWAP_SIZE=512
-IMG_FBSD_SIZE=$(( ( $IMG_SIZE * 1024 ) - 32 - $IMG_SWAP_SIZE - 1 ))
-
-# FreeBSD partition
+# FreeBSD partition and optional swap space
 gpart add -t freebsd ${MDFILE}
 gpart create -s BSD ${MDFILE}s2
-gpart add -t freebsd-ufs -s ${IMG_FBSD_SIZE}M ${MDFILE}s2
-gpart add -t freebsd-swap -s ${IMG_SWAP_SIZE}M ${MDFILE}s2
+if [ $IMG_SWAP_SIZE -gt 0 ]; then
+	gpart add -t freebsd-ufs -s ${IMG_FBSD_SIZE}M ${MDFILE}s2
+	gpart add -t freebsd-swap -s ${IMG_SWAP_SIZE}M ${MDFILE}s2
+else
+	gpart add -t freebsd-ufs ${MDFILE}s2
+fi
 newfs /dev/${MDFILE}s2a
 
 # Turn on Softupdates
