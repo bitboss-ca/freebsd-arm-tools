@@ -6,4 +6,7 @@ TODO
 * User should confirm checkout of source in case there has been an error in directory setup.
 * Add switch for compression of image at end.
 * Add swap.
+* Add fstab line for swap, if opted for.
 * Add interactive flow.
+* 
+
