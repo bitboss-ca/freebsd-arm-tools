@@ -9,6 +9,7 @@ TODO
 * <del>Add fstab line for swap, if opted for.</del>
 * <del>Probably don't need notifications for both World Build Complete and ALL Build Complete - they are only 4 seconds apart.</del>
 * <del>Add switch for ports install.</del>
+* Allow user to edit portsnap.conf
 * Add interactive flow.
-
+* 
 
