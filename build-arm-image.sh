@@ -347,7 +347,7 @@ __EOTTYS__
 
 # Add Ports
 if [ $WITHPORTS == 'YES' ]; then
-	portsnap -p $MNTDIR/usr/ports -d $MNTDIR/var/db/portsnap fetch extract 
+	portsnap -f $MNTDIR/etc/portsnap.conf -p $MNTDIR/usr/ports -d $MNTDIR/var/db/portsnap fetch extract 
 fi
 
 echo $PI_USER_PASSWORD | pw -V $MNTDIR/etc useradd -h 0 -n $PI_USER -c "Raspberry Pi User" -s /bin/csh -m
