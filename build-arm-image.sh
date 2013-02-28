@@ -12,6 +12,7 @@ SVN_CHECKOUT=''
 SVN_UPDATE='NO'
 BUILD='YES'
 NOTIFY='NO'
+WITHPORTS='NO'
 
 #
 # Usage Message
@@ -21,14 +22,15 @@ usage() {
 
 	Usage: # ${0} [options]
 
-		-h This help
 		-b No build, just create image from previously-built source
+		-g GPU Mem Size in MB, must be 32,64,128 (?)
+		-h This help
+		-m Email address to notify
+		-p Install the ports tree
 		-q Quiet, no pre-flight check
 		-s Image size in GB
-		-w Swap size in MB, default no swap (0)
-		-m Email address to notify
-		-g GPU Mem Size in MB, must be 32,64,128 (?)
 		-u Update source via svn before build
+		-w Swap size in MB, default no swap (0)
 		
 		"
 }
@@ -36,14 +38,23 @@ usage() {
 #
 # Read the options
 #
-while getopts ":bhqum:s:w:g:" opt; do
+while getopts ":bg:hm:pqs:uw:" opt; do
 	case $opt in
+		b)
+			BUILD='NO'
+			;;
+		g)
+			GPU_MEM_SIZE=$OPTARG
+			;;
 		h)
 			usage
 			exit
 			;;
-		b)
-			BUILD='NO'
+		m)
+			NOTIFY=$OPTARG
+			;;
+		p)
+			WITHPORTS='YES'
 			;;
 		q)
 			PREFLIGHT=''
@@ -51,17 +62,11 @@ while getopts ":bhqum:s:w:g:" opt; do
 		s)
 			IMG_SIZE=$OPTARG
 			;;
-		w)
-			IMG_SWAP_SIZE=$OPTARG
-			;;
-		m)
-			NOTIFY=$OPTARG
-			;;
-		g)
-			GPU_MEM_SIZE=$OPTARG
-			;;
 		u)
 			SVN_UPDATE='YES'
+			;;
+		w)
+			IMG_SWAP_SIZE=$OPTARG
 			;;
 		\?)
 			echo "Invalid option: -$OPTARG" >&2
@@ -165,6 +170,7 @@ if [ $PREFLIGHT ]; then
 	echo "              NOTIFY: $NOTIFY"
 	echo "       SOURCE UPDATE: $SVN_UPDATE"
 	echo "               BUILD: $BUILD"
+	echo "       INSTALL PORTS: $WITHPORTS"
 	echo "              MNTDIR: $MNTDIR"
 	echo "             SRCROOT: $SRCROOT"
 	echo "         MAKESYSPATH: $MAKESYSPATH"
@@ -240,9 +246,6 @@ if [ $BUILD == 'YES' ]; then
 	eval $buildenv make -C $SRCROOT/sys/boot obj
 	eval $buildenv make -C $SRCROOT/sys/boot UBLDR_LOADADDR=0x2000000 all
 
-	if [ ! $NOTIFY == 'NO' ]; then
-		echo `date "+%F %r"` | mail -s "${IMG_NAME}: ALL Build Complete" $NOTIFY
-	fi
 fi
 
 #
@@ -341,6 +344,11 @@ ttyv5 "/usr/libexec/getty Pc" xterm on secure
 ttyv6 "/usr/libexec/getty Pc" xterm on secure
 ttyu0 "/usr/libexec/getty 3wire.115200" dialup on secure
 __EOTTYS__
+
+# Add Ports
+if [ $WITHPORTS == 'YES' ]; then
+	portsnap -p $MNTDIR/usr/ports -d $MNTDIR/var/db/portsnap fetch extract 
+fi
 
 echo $PI_USER_PASSWORD | pw -V $MNTDIR/etc useradd -h 0 -n $PI_USER -c "Raspberry Pi User" -s /bin/csh -m
 pw -V $MNTDIR/etc groupmod wheel -m $PI_USER
