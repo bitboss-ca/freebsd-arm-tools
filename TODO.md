@@ -8,5 +8,7 @@ TODO
 * Add swap.
 * Add fstab line for swap, if opted for.
 * Add interactive flow.
-* 
+* Probably don't need notifications for both World Build Complete and ALL Build Complete - they are only 4 seconds apart.
+*
+
 
