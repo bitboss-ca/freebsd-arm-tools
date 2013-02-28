@@ -38,6 +38,7 @@ of the script, so you can build, for example, a number of images of different si
 		-b No build, just create image from previously-built source
 		-q Quiet, no pre-flight check
 		-s Image size in GB
+		-w Swap size in MB, default no swap (0)
 		-m Email address to notify
 		-g GPU Mem Size in MB, must be 32,64,128 (?)
 		-u Update source via svn before build
