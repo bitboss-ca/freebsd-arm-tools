@@ -101,7 +101,7 @@ export KERNCONF=RPI-B
 KERNEL=`realpath $MAKEOBJDIRPREFIX`/arm.armv6/`realpath $SRCROOT`/sys/$KERNCONF/kernel
 UBLDR=`realpath $MAKEOBJDIRPREFIX`/arm.armv6/`realpath $SRCROOT`/sys/boot/arm/uboot/ubldr
 DTB=`realpath $MAKEOBJDIRPREFIX`/arm.armv6/`realpath $SRCROOT`/sys/$KERNCONF/bcm2835-rpi-b.dtb
-IMG_FBSD_SIZE=$(( ( $IMG_SIZE * 1024 ) - 32 - $IMG_SWAP_SIZE - 1 ))
+IMG_FBSD_SIZE=$(( ( $IMG_SIZE * 1024 ) - 32 - $IMG_SWAP_SIZE - 2 ))
 
 #
 # Sanity Checks
@@ -248,7 +248,7 @@ fi
 #
 # Prepare Image File
 #
-if [ ! $NOTIFY == 'NO' ]; then
+if [ $PREFLIGHT ]; then
 	echo -n "Creating image file..."
 fi
 rm -f $IMG
@@ -277,8 +277,8 @@ umount $MNTDIR
 gpart add -t freebsd ${MDFILE}
 gpart create -s BSD ${MDFILE}s2
 if [ $IMG_SWAP_SIZE -gt 0 ]; then
-	gpart add -t freebsd-ufs -s ${IMG_FBSD_SIZE}M ${MDFILE}s2
-	gpart add -t freebsd-swap -s ${IMG_SWAP_SIZE}M ${MDFILE}s2
+	gpart add -a1M -t freebsd-ufs -s ${IMG_FBSD_SIZE}M ${MDFILE}s2
+	gpart add -a1M -t freebsd-swap -s ${IMG_SWAP_SIZE}M ${MDFILE}s2
 else
 	gpart add -t freebsd-ufs ${MDFILE}s2
 fi
@@ -310,8 +310,15 @@ make -C $SRCROOT DESTDIR=$MNTDIR -DDB_FROM_SRC distribution
 
 echo 'fdt addr 0x100' > $MNTDIR/boot/loader.rc
 
+#
+# Populate fstab with freebsd slice and optional swap slice
+#
 echo '/dev/mmcsd0s2a / ufs rw,noatime 1 1' > $MNTDIR/etc/fstab
+if [ $IMG_SWAP_SIZE -gt 0 ]; then
+	echo '/dev/mmcsd0s2b none swap sw 0 0' >> $MNTDIR/etc/fstab
+fi
 
+# Populate /etc/rc.conf
 cat > $MNTDIR/etc/rc.conf <<__EORC__
 hostname="raspberry-pi"
 ifconfig_ue0="DHCP"
@@ -323,6 +330,7 @@ sendmail_outbound_enable="NO"
 sendmail_msp_queue_enable="NO"
 __EORC__
 
+# Populate /etc/ttys
 cat > $MNTDIR/etc/ttys <<__EOTTYS__
 ttyv0 "/usr/libexec/getty Pc" xterm on secure
 ttyv1 "/usr/libexec/getty Pc" xterm on secure
