@@ -7,8 +7,8 @@ TODO
 * Add switch for compression of image at end.
 * <del>Add (optional) swap.</del>
 * <del>Add fstab line for swap, if opted for.</del>
+* <del>Probably don't need notifications for both World Build Complete and ALL Build Complete - they are only 4 seconds apart.</del>
+* Add switch for ports install.
 * Add interactive flow.
-* Probably don't need notifications for both World Build Complete and ALL Build Complete - they are only 4 seconds apart.
-*
 
 
