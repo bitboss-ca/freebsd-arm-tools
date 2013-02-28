@@ -32,16 +32,17 @@ various switches and knobs to make the update / build process a little easier.  
 of the script, so you can build, for example, a number of images of different sizes, without having to updated source code and rebuild each time.
 
 <pre>
-	Usage: # .build-arm-image.sh [options]
+        Usage: # ./build-arm-image.sh [options]
 
-		-h This help
-		-b No build, just create image from previously-built source
-		-q Quiet, no pre-flight check
-		-s Image size in GB
-		-w Swap size in MB, default no swap (0)
-		-m Email address to notify
-		-g GPU Mem Size in MB, must be 32,64,128 (?)
-		-u Update source via svn before build
+                -b No build, just create image from previously-built source
+                -g GPU Mem Size in MB, must be 32,64,128 (?)
+                -h This help
+                -m Email address to notify
+                -p Install the ports tree
+                -q Quiet, no pre-flight check
+                -s Image size in GB
+                -u Update source via svn before build
+                -w Swap size in MB, default no swap (0)
 </pre>
 
 Extracting and Writing Images
