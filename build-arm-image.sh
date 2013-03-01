@@ -28,7 +28,7 @@ usage() {
 		-m Email address to notify
 		-p Install the ports tree
 		-q Quiet, no pre-flight check
-		-s Image size in GB
+		-s Image size.  Default value 1, default unit GB, add M for MB.
 		-u Update source via svn before build
 		-w Swap size in MB, default no swap (0)
 		
@@ -99,14 +99,26 @@ export SRCROOT=/src/FreeBSD/head
 export MNTDIR=/mnt
 export MAKEOBJDIRPREFIX=/src/FreeBSD/obj
 export IMG=$MAKEOBJDIRPREFIX/bsd-pi.img
-export IMG_SIZE_COUNT=$(( ${IMG_SIZE} * 8 ))
+#export IMG_SIZE_COUNT=$(( ${IMG_SIZE} * 8 ))
 export TARGET_ARCH=armv6
 export MAKESYSPATH=$SRCROOT/share/mk
 export KERNCONF=RPI-B
 KERNEL=`realpath $MAKEOBJDIRPREFIX`/arm.armv6/`realpath $SRCROOT`/sys/$KERNCONF/kernel
 UBLDR=`realpath $MAKEOBJDIRPREFIX`/arm.armv6/`realpath $SRCROOT`/sys/boot/arm/uboot/ubldr
 DTB=`realpath $MAKEOBJDIRPREFIX`/arm.armv6/`realpath $SRCROOT`/sys/$KERNCONF/bcm2835-rpi-b.dtb
-IMG_FBSD_SIZE=$(( ( $IMG_SIZE * 1024 ) - 32 - $IMG_SWAP_SIZE - 2 ))
+
+#
+#	Image Size Setup
+#
+IMG_SIZE_UNITS=$( echo $IMG_SIZE | cut -c ${#IMG_SIZE} )
+if [ $IMG_SIZE_UNITS == 'M' -o $IMG_SIZE_UNITS == 'm' ]; then
+	IMG_SIZE_COUNT=$( echo $IMG_SIZE | sed 's/m//' | sed 's/M//' )
+else
+	IMG_SIZE_COUNT=$(( $IMG_SIZE * 1024 ))
+	IMG_SIZE=${IMG_SIZE}GB
+fi
+IMG_FBSD_SIZE=$(( ( $IMG_SIZE_COUNT ) - 32 - $IMG_SWAP_SIZE - 2 ))
+
 
 #
 # Sanity Checks
@@ -148,7 +160,7 @@ cd $curdir
 #
 # Set The Image Filename
 #
-IMG_NAME="FreeBSD-HEAD-r${CURRENT_SVN_REVISION}-ARMv6-${IMG_SIZE}G.img"
+IMG_NAME="FreeBSD-HEAD-r${CURRENT_SVN_REVISION}-ARMv6-${IMG_SIZE}.img"
 
 
 #
@@ -216,7 +228,7 @@ if [ "${NEW_SVN_REVISION}" -ne  "${CURRENT_SVN_REVISION}" ]; then
 	#
 	#       Update To New Image Filename
 	#
-	IMG_NAME="FreeBSD-HEAD-r${NEW_SVN_REVISION}-ARMv6-${IMG_SIZE}G.img"
+	IMG_NAME="FreeBSD-HEAD-r${NEW_SVN_REVISION}-ARMv6-${IMG_SIZE}.img"
 	if [ ! $NOTIFY == 'NO' ]; then
 	        echo `date "+%F %r"` | mail -s "Source checkout / update complete, new name: ${IMG_NAME}" $NOTIFY
 	fi
@@ -255,7 +267,7 @@ if [ $PREFLIGHT ]; then
 	echo -n "Creating image file..."
 fi
 rm -f $IMG
-dd if=/dev/zero of=$IMG bs=128M count=$IMG_SIZE_COUNT
+dd if=/dev/zero of=$IMG bs=1M count=$IMG_SIZE_COUNT
 MDFILE=`mdconfig -a -f $IMG`
 gpart create -s MBR ${MDFILE}
 

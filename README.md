@@ -31,18 +31,25 @@ An expansion on original by [Gonzo](http://kernelnomicon.org/) from [Building im
 various switches and knobs to make the update / build process a little easier.  Also, separates the source update, build and image-creation parts
 of the script, so you can build, for example, a number of images of different sizes, without having to updated source code and rebuild each time.
 
-<pre>
-        Usage: # ./build-arm-image.sh [options]
+UPDATE: Script now includes options to add a swap slice and to install ports tree to your image.
 
-                -b No build, just create image from previously-built source
-                -g GPU Mem Size in MB, must be 32,64,128 (?)
-                -h This help
-                -m Email address to notify
-                -p Install the ports tree
-                -q Quiet, no pre-flight check
-                -s Image size in GB
-                -u Update source via svn before build
-                -w Swap size in MB, default no swap (0)
+UPDATE: Image size can now be specified in MB in so you can tailor your image exactly to your card size. 
+Use diskinfo(8) to get your card size in Bytes, and divide by 1024 twice to get your real card size in 
+MB. Use that size, and the script will calculate the rest in order to allow for boot partition, swap, and 
+alignment.
+
+<pre>
+	Usage: # ${0} [options]
+
+		-b No build, just create image from previously-built source
+		-g GPU Mem Size in MB, must be 32,64,128 (?)
+		-h This help
+		-m Email address to notify
+		-p Install the ports tree
+		-q Quiet, no pre-flight check
+		-s Image size.  Default value 1, default unit GB, add M for MB.
+		-u Update source via svn before build
+		-w Swap size in MB, default no swap (0)
 </pre>
 
 Extracting and Writing Images
