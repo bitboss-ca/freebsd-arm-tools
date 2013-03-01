@@ -11,5 +11,7 @@ TODO
 * <del>Add switch for ports install.</del>
 * Allow user to edit portsnap.conf
 * Add interactive flow.
-* 
+* Change image size logic to use megabytes.
+* Include info in README on how to correctly size image.
+*
 
