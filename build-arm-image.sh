@@ -96,7 +96,7 @@ export GPU_MEM=$GPU_MEM_SIZE
 export PI_USER=pi
 export PI_USER_PASSWORD=raspberry
 export SRCROOT=/src/FreeBSD/head
-export MNTDIR=/mnt
+export MNTDIR=/mnt/pi
 export MAKEOBJDIRPREFIX=/src/FreeBSD/obj
 export IMG=$MAKEOBJDIRPREFIX/bsd-pi.img
 #export IMG_SIZE_COUNT=$(( ${IMG_SIZE} * 8 ))
@@ -127,6 +127,11 @@ if [ -z "$MNTDIR" ]; then
 echo "MNTDIR is not set properly"
 exit 1
 fi
+
+#
+# make mntdir
+#
+mkdir $MNTDIR
 
 #
 # Infrastructure checks
