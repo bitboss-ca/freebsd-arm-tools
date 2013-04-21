@@ -131,7 +131,7 @@ fi
 #
 # make mntdir
 #
-mkdir $MNTDIR
+mkdir -p $MNTDIR
 
 #
 # Infrastructure checks
