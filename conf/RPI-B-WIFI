@@ -109,15 +109,15 @@ device		wlan_tkip
 device		ehci
 device		uhci
 device		ohci
-#device		wlan_amrr
+device		wlan_amrr
 device 		firmware
 
 device		urtw
 device		zyd
 device		ural
-#device		upgt
+device		upgt
 device		uath
-#device		run
+device		run
 device		rum
 
 # USB ethernet support

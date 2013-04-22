@@ -101,7 +101,7 @@ export PI_USER=pi
 export PI_USER_PASSWORD=raspberry
 export SRCROOT=/src/FreeBSD/head
 # if this is /mnt, then it hides every other mount inside /mnt.  So, /mnt/pi resolves that.
-export MNTDIR=/mnt/pi
+export MNTDIR=/mnt/rpi
 export MAKEOBJDIRPREFIX=/src/FreeBSD/obj
 export IMG=$MAKEOBJDIRPREFIX/bsd-pi.img
 #export IMG_SIZE_COUNT=$(( ${IMG_SIZE} * 8 ))
@@ -177,7 +177,7 @@ cd $curdir
 #
 # Set The Image Filename
 #
-IMG_NAME="FreeBSD-HEAD-r${CURRENT_SVN_REVISION}-ARMv6-${IMG_SIZE}.img"
+IMG_NAME="FreeBSD-HEAD-r${CURRENT_SVN_REVISION}-ARMv6-${KERNCONF}-${IMG_SIZE}.img"
 
 #
 # Pre-Flight Confirmation
