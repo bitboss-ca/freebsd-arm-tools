@@ -13,6 +13,7 @@ SVN_UPDATE='NO'
 BUILD='YES'
 NOTIFY='NO'
 WITHPORTS='NO'
+KERNCONF='RPI-B'
 
 #
 # Usage Message
@@ -31,14 +32,14 @@ usage() {
 		-s Image size.  Default value 1, default unit GB, add M for MB.
 		-u Update source via svn before build
 		-w Swap size in MB, default no swap (0)
-		
+		-k Kernel configuration file (default RPI-B)
 		"
 }
 
 #
 # Read the options
 #
-while getopts ":bg:hm:pqs:uw:" opt; do
+while getopts ":bg:hm:pqs:uw:k:" opt; do
 	case $opt in
 		b)
 			BUILD='NO'
@@ -55,6 +56,9 @@ while getopts ":bg:hm:pqs:uw:" opt; do
 			;;
 		p)
 			WITHPORTS='YES'
+			;;
+		k)
+			KERNCONF=$OPTARG
 			;;
 		q)
 			PREFLIGHT=''
@@ -96,13 +100,14 @@ export GPU_MEM=$GPU_MEM_SIZE
 export PI_USER=pi
 export PI_USER_PASSWORD=raspberry
 export SRCROOT=/src/FreeBSD/head
+# if this is /mnt, then it hides every other mount inside /mnt.  So, /mnt/pi resolves that.
 export MNTDIR=/mnt/pi
 export MAKEOBJDIRPREFIX=/src/FreeBSD/obj
 export IMG=$MAKEOBJDIRPREFIX/bsd-pi.img
 #export IMG_SIZE_COUNT=$(( ${IMG_SIZE} * 8 ))
 export TARGET_ARCH=armv6
+export KERNCONF=${KERNCONF}
 export MAKESYSPATH=$SRCROOT/share/mk
-export KERNCONF=RPI-B
 KERNEL=`realpath $MAKEOBJDIRPREFIX`/arm.armv6/`realpath $SRCROOT`/sys/$KERNCONF/kernel
 UBLDR=`realpath $MAKEOBJDIRPREFIX`/arm.armv6/`realpath $SRCROOT`/sys/boot/arm/uboot/ubldr
 DTB=`realpath $MAKEOBJDIRPREFIX`/arm.armv6/`realpath $SRCROOT`/sys/$KERNCONF/bcm2835-rpi-b.dtb
@@ -125,6 +130,13 @@ IMG_FBSD_SIZE=$(( ( $IMG_SIZE_COUNT ) - 32 - $IMG_SWAP_SIZE - 2 ))
 #
 if [ -z "$MNTDIR" ]; then
 echo "MNTDIR is not set properly"
+exit 1
+fi
+
+if [ -e "$SRCROOT/sys/arm/conf/$KERNCONF" ]; then
+echo "Kernel configuration $KERNCONF exists"
+else
+echo "Kernel configuration $KERNCONF does not exist"
 exit 1
 fi
 
@@ -166,7 +178,6 @@ cd $curdir
 # Set The Image Filename
 #
 IMG_NAME="FreeBSD-HEAD-r${CURRENT_SVN_REVISION}-ARMv6-${IMG_SIZE}.img"
-
 
 #
 # Pre-Flight Confirmation
@@ -317,14 +328,12 @@ if [ ! $NOTIFY == 'NO' ]; then
 	echo "Done."
 fi
 
-
-
 mount /dev/${MDFILE}s2a $MNTDIR
 
 #
 # Install to Image File From Source, add Basic Config
 #
-make -C $SRCROOT DESTDIR=$MNTDIR -DDB_FROM_SRC installkernel
+make -C $SRCROOT DESTDIR=$MNTDIR -DDB_FROM_SRC installkernel KERNCONF=${KERNCONF}
 make -C $SRCROOT DESTDIR=$MNTDIR -DDB_FROM_SRC installworld
 make -C $SRCROOT DESTDIR=$MNTDIR -DDB_FROM_SRC distribution
 

@@ -99,6 +99,27 @@ device		scbus
 device		da
 device		umass
 
+# WLAN required for wireless
+device		wlan
+device		wlan_wep
+device		wlan_ccmp
+device		wlan_tkip
+
+# USB wireless support
+device		ehci
+device		uhci
+device		ohci
+#device		wlan_amrr
+device 		firmware
+
+device		urtw
+device		zyd
+device		ural
+#device		upgt
+device		uath
+#device		run
+device		rum
+
 # USB ethernet support
 device		smcphy
 device		mii
