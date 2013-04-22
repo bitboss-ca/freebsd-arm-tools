@@ -50,6 +50,7 @@ alignment.
 		-s Image size.  Default value 1, default unit GB, add M for MB.
 		-u Update source via svn before build
 		-w Swap size in MB, default no swap (0)
+		-k Kernel configuration to use (default RPI-B)
 </pre>
 
 Extracting and Writing Images
@@ -191,3 +192,8 @@ the freebsd-ufs slice to take up the new space.  More on adding a swap space lat
 enzo# gpart resize -a1 -i1 da1s2
 da1s2a resized
 ```
+
+Example conf files
+-------------------
+
+There is an example file in /conf which adds the "enc" device, the "pf" device and the proc filesystem
