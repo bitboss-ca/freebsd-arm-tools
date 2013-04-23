@@ -244,7 +244,7 @@ if [ "${NEW_SVN_REVISION}" -ne  "${CURRENT_SVN_REVISION}" ]; then
 	#
 	#       Update To New Image Filename
 	#
-	IMG_NAME="FreeBSD-HEAD-r${NEW_SVN_REVISION}-ARMv6-${IMG_SIZE}.img"
+	IMG_NAME="FreeBSD-HEAD-r${CURRENT_SVN_REVISION}-ARMv6-${KERNCONF}-${IMG_SIZE}.img"
 	if [ ! $NOTIFY == 'NO' ]; then
 	        echo `date "+%F %r"` | mail -s "Source checkout / update complete, new name: ${IMG_NAME}" $NOTIFY
 	fi
@@ -352,11 +352,10 @@ cat > $MNTDIR/etc/rc.conf <<__EORC__
 hostname="raspberry-pi"
 ifconfig_ue0="DHCP"
 sshd_enable="YES"
-
 devd_enable="YES"
-sendmail_submit_enable="NO"
-sendmail_outbound_enable="NO"
-sendmail_msp_queue_enable="NO"
+sendmail_enable="NONE"
+ntpd_enable="YES"
+ntpdate_flags="-b 0.us.pool.ntp.org"
 __EORC__
 
 # Populate /etc/ttys
@@ -373,7 +372,7 @@ __EOTTYS__
 
 # Add Ports
 if [ $WITHPORTS == 'YES' ]; then
-	portsnap -f $MNTDIR/etc/portsnap.conf -p $MNTDIR/usr/ports -d $MNTDIR/var/db/portsnap fetch extract 
+	portsnap -f $MNTDIR/etc/portsnap.conf -p $MNTDIR/usr/ports -d $MNTDIR/var/db/portsnap cron extract 
 fi
 
 echo $PI_USER_PASSWORD | pw -V $MNTDIR/etc useradd -h 0 -n $PI_USER -c "Raspberry Pi User" -s /bin/csh -m
