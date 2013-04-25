@@ -125,6 +125,9 @@ device		smcphy
 device		mii
 device		smsc
 
+# USB serial 
+# device uftdi
+
 #proc filesystem
 options 	PROCFS			#Process filesystem (requires PSEUDOFS)
 options 	PSEUDOFS		#Pseudo-filesystem framework

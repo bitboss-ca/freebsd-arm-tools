@@ -14,6 +14,9 @@ BUILD='YES'
 NOTIFY='NO'
 WITHPORTS='NO'
 KERNCONF='RPI-B'
+SVNBRANCH='svn://svn.freebsd.org/base/head/'
+UBOOT=http://people.freebsd.org/~gonzo/arm/rpi/freebsd-uboot-20130201.tar.gz
+HOSTNAME=raspberry-pi
 
 #
 # Usage Message
@@ -188,6 +191,7 @@ if [ $PREFLIGHT ]; then
 	echo "-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-"
 	echo "CURRENT_SVN_REVISION: ${CURRENT_SVN_REVISION}"
 	echo "            IMG_NAME: ${IMG_NAME}"
+	echo "            HOSTNAME: ${HOSTNAME}"
 	echo "            IMG_SIZE: $IMG_SIZE"
 	echo "      IMG_SIZE_COUNT: $IMG_SIZE_COUNT"
 	echo "       IMG_SWAP_SIZE: $IMG_SWAP_SIZE"
@@ -209,6 +213,8 @@ if [ $PREFLIGHT ]; then
 	echo "              KERNEL: $KERNEL"
 	echo "               UBLDR: $UBLDR"
 	echo "                 DTB: $DTB"
+	echo "           SVNBRANCH: $SVNBRANCH"
+	echo "               UBOOT: $UBOOT"
 	echo ' '
 	echo -n '			[ CRTL-C to cancel, or ENTER... ]'
 	read x < /dev/tty
@@ -220,7 +226,7 @@ fi
 if [ -z "${CURRENT_SVN_REVISION}" ]; then
 	SVN_CHECKOUT='YES'
 	cd $SRCROOT
-	svn co svn://svn.freebsd.org/base/head/ ./
+	svn co ${SVNBRANCH} ./
 	cd $curdir
 fi
 
@@ -292,7 +298,7 @@ gpart add -s 32m -t '!12' ${MDFILE}
 gpart set -a active -i 1 ${MDFILE}
 newfs_msdos -L boot -F 16 /dev/${MDFILE}s1
 mount_msdosfs /dev/${MDFILE}s1 $MNTDIR
-fetch -q -o - http://people.freebsd.org/~gonzo/arm/rpi/freebsd-uboot-20130201.tar.gz | tar -x -v -z -C $MNTDIR -f -
+fetch -q -o - ${UBOOT} | tar -x -v -z -C $MNTDIR -f -
 
 cat >> $MNTDIR/config.txt <<__EOC__
 gpu_mem=$GPU_MEM
@@ -349,7 +355,7 @@ fi
 
 # Populate /etc/rc.conf
 cat > $MNTDIR/etc/rc.conf <<__EORC__
-hostname="raspberry-pi"
+hostname=$HOSTNAME
 ifconfig_ue0="DHCP"
 sshd_enable="YES"
 devd_enable="YES"
@@ -372,7 +378,7 @@ __EOTTYS__
 
 # Add Ports
 if [ $WITHPORTS == 'YES' ]; then
-	portsnap -f $MNTDIR/etc/portsnap.conf -p $MNTDIR/usr/ports -d $MNTDIR/var/db/portsnap cron extract 
+	portsnap -f $MNTDIR/etc/portsnap.conf -p $MNTDIR/usr/ports -d $MNTDIR/var/db/portsnap fetch extract 
 fi
 
 echo $PI_USER_PASSWORD | pw -V $MNTDIR/etc useradd -h 0 -n $PI_USER -c "Raspberry Pi User" -s /bin/csh -m
