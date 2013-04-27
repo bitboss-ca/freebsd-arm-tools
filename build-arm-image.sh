@@ -17,6 +17,10 @@ KERNCONF='RPI-B'
 SVNBRANCH='svn://svn.freebsd.org/base/head/'
 UBOOT=http://people.freebsd.org/~gonzo/arm/rpi/freebsd-uboot-20130201.tar.gz
 HOSTNAME=raspberry-pi
+# 32M
+UFS_JOURNAL_SIZE=32
+# 32M
+MBR_SIZE=32
 
 #
 # Usage Message
@@ -107,7 +111,6 @@ export SRCROOT=/src/FreeBSD/head
 export MNTDIR=/mnt/rpi
 export MAKEOBJDIRPREFIX=/src/FreeBSD/obj
 export IMG=$MAKEOBJDIRPREFIX/bsd-pi.img
-#export IMG_SIZE_COUNT=$(( ${IMG_SIZE} * 8 ))
 export TARGET_ARCH=armv6
 export KERNCONF=${KERNCONF}
 export MAKESYSPATH=$SRCROOT/share/mk
@@ -125,8 +128,7 @@ else
 	IMG_SIZE_COUNT=$(( $IMG_SIZE * 1024 ))
 	IMG_SIZE=${IMG_SIZE}GB
 fi
-IMG_FBSD_SIZE=$(( ( $IMG_SIZE_COUNT ) - 32 - $IMG_SWAP_SIZE - 2 ))
-
+IMG_FBSD_SIZE=$(( ( $IMG_SIZE_COUNT ) - $MBR_SIZE - $IMG_SWAP_SIZE - 2 ))
 
 #
 # Sanity Checks
@@ -196,6 +198,8 @@ if [ $PREFLIGHT ]; then
 	echo "      IMG_SIZE_COUNT: $IMG_SIZE_COUNT"
 	echo "       IMG_SWAP_SIZE: $IMG_SWAP_SIZE"
 	echo "       IMG_FBSD_SIZE: $IMG_FBSD_SIZE"
+        echo "            MBR_SIZE: $MBR_SIZE"
+        echo "    UFS_JOURNAL_SIZE: $UFS_JOURNAL_SIZE"
 	echo "             GPU_MEM: $GPU_MEM"
 	echo "             PI_USER: $PI_USER"
 	echo "    PI_USER_PASSWORD: $PI_USER_PASSWORD"
@@ -294,7 +298,7 @@ MDFILE=`mdconfig -a -f $IMG`
 gpart create -s MBR ${MDFILE}
 
 # Boot partition
-gpart add -s 32m -t '!12' ${MDFILE}
+gpart add -s ${MBR_SIZE}m -t '!12' ${MDFILE}
 gpart set -a active -i 1 ${MDFILE}
 newfs_msdos -L boot -F 16 /dev/${MDFILE}s1
 mount_msdosfs /dev/${MDFILE}s1 $MNTDIR
@@ -327,7 +331,7 @@ tunefs -n enable /dev/${MDFILE}s2a
 # This makes reboots tolerable if you just pull power on the BB
 # Note: A slow SDHC reads about 1MB/s, so a 30MB
 # journal can delay boot by 30s.
-tunefs -j enable -S 4194304 /dev/${MDFILE}s2a
+tunefs -j enable -S $(($UFS_JOURNAL_SIZE*1024*1024)) /dev/${MDFILE}s2a
 # Turn on NFSv4 ACLs
 tunefs -N enable /dev/${MDFILE}s2a
 if [ ! $NOTIFY == 'NO' ]; then
