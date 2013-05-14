@@ -7,7 +7,7 @@ set -e
 PREFLIGHT='YES'
 IMG_SIZE=1
 IMG_SWAP_SIZE=0
-GPU_MEM_SIZE=128
+GPU_MEM_SIZE=128			# MB
 SVN_CHECKOUT=''
 SVN_UPDATE='NO'
 BUILD='YES'
@@ -17,10 +17,8 @@ KERNCONF='RPI-B'
 SVNBRANCH='svn://svn.freebsd.org/base/head/'
 UBOOT=http://people.freebsd.org/~gonzo/arm/rpi/freebsd-uboot-20130201.tar.gz
 HOSTNAME=raspberry-pi
-# 32M
-UFS_JOURNAL_SIZE=32
-# 32M
-MBR_SIZE=32
+UFS_JOURNAL_SIZE=32		# MB
+MBR_SIZE=32						# MB
 
 #
 # Usage Message
@@ -44,7 +42,7 @@ usage() {
 }
 
 #
-# Read the options
+# Options
 #
 while getopts ":bg:hm:pqs:uw:k:" opt; do
 	case $opt in
@@ -100,23 +98,95 @@ if [ `whoami` != "root" ]; then
 fi
 
 #
-# 	Setup
+#	Setup
 #
-curdir=`pwd`
 export GPU_MEM=$GPU_MEM_SIZE
 export PI_USER=pi
 export PI_USER_PASSWORD=raspberry
-export SRCROOT=/src/FreeBSD/head
-# if this is /mnt, then it hides every other mount inside /mnt.  So, /mnt/pi resolves that.
 export MNTDIR=/mnt/rpi
-export MAKEOBJDIRPREFIX=/src/FreeBSD/obj
 export IMG=$MAKEOBJDIRPREFIX/bsd-pi.img
 export TARGET_ARCH=armv6
 export KERNCONF=${KERNCONF}
+export SRCROOT=/src/FreeBSD/head
 export MAKESYSPATH=$SRCROOT/share/mk
+export MAKEOBJDIRPREFIX=/src/FreeBSD/obj
+
+
+#
+#	Infrastructure: Source
+#
+if [ ! -d "${SRCROOT}" ]; then
+	echo -n "Source root ${SRCROOT} does not exist, create? [Y|n]: "
+	read x < /dev/tty
+	y=$( echo $x | cut -c1 )
+	if [ "x${y}" = 'xN' ] || [ "x${y}" = 'xn' ]; then
+		echo "Exiting."
+		exit
+	else
+		echo -n "Creating SRCROOT: ${SRCROOT}..."
+		mkdir -p $SRCROOT
+		if [ ! -d $SRCROOT ]; then
+			echo 'FAIL'
+			exit 1
+		fi
+		echo 'OK'
+	fi
+fi
+cd $SRCROOT
+CURRENT_SVN_REVISION=$(svn info |grep '^Revision' | awk '{print $2}')
+cd -
+if [ -z "${CURRENT_SVN_REVISION}" ]; then
+	CURRENT_SVN_REVISION='N/A'
+	echo -n "Source tree does not exist at ${SRCROOT}.  Check out before build? [Y|n]: "
+	read x < /dev/tty
+	y=$( echo $x | cut -c1 )
+	echo "${y}"
+	if [ "x${y}" = 'xN' ] || [ "x${y}" = 'xn' ]; then
+		echo "Exiting."
+		exit
+	else
+		SVN_CHECKOUT='YES'
+		SVN_UPDATE=''
+	fi
+fi
+
+#
+#	Infrastructure: Mount
+#
+mkdir -p $MNTDIR
+if [ -z "$MNTDIR" ]; then
+	echo "MNTDIR is not set properly"
+	exit 1
+fi
+
+#
+#	Infrastructure: Target
+#
+if [ ! -d "${MAKEOBJDIRPREFIX}" ]; then
+	echo -n "Make target ${MAKEOBJDIRPREFIX} does not exist, create? [Y|n]: "
+	read x < /dev/tty
+	y=$( echo $x | cut -c1 )
+	if [ "x${y}" = 'xN' ] || [ "x${y}" = 'xn' ]; then
+		echo "Exiting."
+		exit
+	else
+		echo -n "Creating MAKEOBJDIRPREFIX: ${MAKEOBJDIRPREFIX}..."
+		mkdir -p $MAKEOBJDIRPREFIX
+		if [ ! -d $MAKEOBJDIRPREFIX ]; then
+			echo 'FAIL'
+			exit 1
+		fi
+		echo 'OK'
+	fi
+fi
+
+#
+# Other Paths
+#
 KERNEL=`realpath $MAKEOBJDIRPREFIX`/arm.armv6/`realpath $SRCROOT`/sys/$KERNCONF/kernel
 UBLDR=`realpath $MAKEOBJDIRPREFIX`/arm.armv6/`realpath $SRCROOT`/sys/boot/arm/uboot/ubldr
 DTB=`realpath $MAKEOBJDIRPREFIX`/arm.armv6/`realpath $SRCROOT`/sys/$KERNCONF/bcm2835-rpi-b.dtb
+SCRIPTDIR="`cd $(dirname $0);pwd;cd -`"
 
 #
 #	Image Size Setup
@@ -131,61 +201,12 @@ fi
 IMG_FBSD_SIZE=$(( ( $IMG_SIZE_COUNT ) - $MBR_SIZE - $IMG_SWAP_SIZE - 2 ))
 
 #
-# Sanity Checks
-#
-if [ -z "$MNTDIR" ]; then
-echo "MNTDIR is not set properly"
-exit 1
-fi
-
-if [ -e "$SRCROOT/sys/arm/conf/$KERNCONF" ]; then
-echo "Kernel configuration $KERNCONF exists"
-else
-echo "Kernel configuration $KERNCONF does not exist"
-exit 1
-fi
-
-#
-# make mntdir
-#
-mkdir -p $MNTDIR
-
-#
-# Infrastructure checks
-#
-if [ ! -d $SRCROOT ]; then
-	echo -n "Creating SRCROOT: ${SRCROOT}..."
-	mkdir -p $SRCROOT
-	if [ ! -d $SRCROOT ]; then
-		echo 'FAIL'
-		exit
-	fi
-	echo 'OK'
-fi
-if [ ! -d ${MAKEOBJDIRPREFIX} ]; then
-	echo -n "Creating MAKEOBJDIRPREFIX: ${MAKEOBJDIRPREFIX}..."
-	mkdir -p ${SRCROOT}
-	if [ ! -d ${SRCROOT} ]; then
-		echo 'FAIL'
-		exit
-	fi
-	echo 'OK'
-fi
-
-#
-# Get SVN Revision
-#
-cd $SRCROOT
-CURRENT_SVN_REVISION=$(svn info |grep '^Revision' | awk '{print $2}')
-cd $curdir
-
-#
-# Set The Image Filename
+#	Image Filename
 #
 IMG_NAME="FreeBSD-HEAD-r${CURRENT_SVN_REVISION}-ARMv6-${KERNCONF}-${IMG_SIZE}.img"
 
 #
-# Pre-Flight Confirmation
+#	Pre-Flight Confirmation
 #
 if [ $PREFLIGHT ]; then
 	echo "-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-"
@@ -198,12 +219,13 @@ if [ $PREFLIGHT ]; then
 	echo "      IMG_SIZE_COUNT: $IMG_SIZE_COUNT"
 	echo "       IMG_SWAP_SIZE: $IMG_SWAP_SIZE"
 	echo "       IMG_FBSD_SIZE: $IMG_FBSD_SIZE"
-        echo "            MBR_SIZE: $MBR_SIZE"
-        echo "    UFS_JOURNAL_SIZE: $UFS_JOURNAL_SIZE"
+	echo "            MBR_SIZE: $MBR_SIZE"
+	echo "    UFS_JOURNAL_SIZE: $UFS_JOURNAL_SIZE"
 	echo "             GPU_MEM: $GPU_MEM"
 	echo "             PI_USER: $PI_USER"
 	echo "    PI_USER_PASSWORD: $PI_USER_PASSWORD"
 	echo "              NOTIFY: $NOTIFY"
+	echo "     SOURCE CHECKOUT: $SVN_CHECKOUT"
 	echo "       SOURCE UPDATE: $SVN_UPDATE"
 	echo "               BUILD: $BUILD"
 	echo "       INSTALL PORTS: $WITHPORTS"
@@ -224,41 +246,54 @@ if [ $PREFLIGHT ]; then
 	read x < /dev/tty
 fi
 
+
 #
-#		Checkout Source If It's Not There 
+#	Check Out / Update Source
 #
-if [ -z "${CURRENT_SVN_REVISION}" ]; then
-	SVN_CHECKOUT='YES'
-	cd $SRCROOT
-	svn co ${SVNBRANCH} ./
-	cd $curdir
+if [ $SVN_CHECKOUT == 'YES' ]; then
+		cd $SRCROOT
+		svn co ${SVNBRANCH} ./
+		cd -
+else
+	if [ $SVN_UPDATE == 'YES' ]; then
+		cd $SRCROOT
+		svn up
+		cd -
+	fi
 fi
 
 #
-#		Update Source
-#
-if [ $SVN_UPDATE == 'YES' ]; then
-	cd $SRCROOT
-	svn up
-	cd $curdir
-fi
-
-#
-#	Get SVN Revision (Again)
+#	Update Image Filename with SVN Revision
 #
 cd $SRCROOT
 NEW_SVN_REVISION=$(svn info |grep '^Revision' | awk '{print $2}')
-cd $curdir
-
+cd -
 if [ "${NEW_SVN_REVISION}" -ne  "${CURRENT_SVN_REVISION}" ]; then
-	#
-	#       Update To New Image Filename
-	#
-	IMG_NAME="FreeBSD-HEAD-r${CURRENT_SVN_REVISION}-ARMv6-${KERNCONF}-${IMG_SIZE}.img"
+	IMG_NAME="FreeBSD-HEAD-r${NEW_SVN_REVISION}-ARMv6-${KERNCONF}-${IMG_SIZE}.img"
 	if [ ! $NOTIFY == 'NO' ]; then
 	        echo `date "+%F %r"` | mail -s "Source checkout / update complete, new name: ${IMG_NAME}" $NOTIFY
 	fi
 fi
+
+#
+#		Check For Kernel Conf In Source Tree 
+#
+if [ ! -e "$SRCROOT/sys/arm/conf/$KERNCONF" ]; then
+	if [ ! -e "$SCRIPTDIR/conf/$KERNCONF" ]; then
+		"Kernel configuration $KERNCONF does not exist in source tree or conf directory."
+		exit 1
+	else
+		echo -n "Attempting to link kernel configuration $KERNCONF into the source tree..."
+		ln -s "$SCRIPTDIR/conf/$KERNCONF" "$SRCROOT/sys/arm/conf/$KERNCONF"
+		if [ -h "$SRCROOT/sys/arm/conf/$KERNCONF" ]; then
+			echo 'OK'
+		else
+			echo 'FAIL'
+			exit 1
+		fi
+	fi
+fi
+
 
 #
 # Build From Source
