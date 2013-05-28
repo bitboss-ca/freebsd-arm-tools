@@ -33,10 +33,7 @@ of the script, so you can build, for example, a number of images of different si
 
 UPDATE: Script now includes options to add a swap slice and to install ports tree to your image.
 
-UPDATE: Image size can now be specified in MB in so you can tailor your image exactly to your card size. 
-Use diskinfo(8) to get your card size in Bytes, and divide by 1024 twice to get your real card size in 
-MB. Use that size, and the script will calculate the rest in order to allow for boot partition, swap, and 
-alignment.
+UPDATE: Image size can now be specified in MB in so you can tailor your image exactly to your card size.  See Determining Your SD Card Size.
 
 <pre>
 	Usage: # ${0} [options]
@@ -51,6 +48,22 @@ alignment.
 		-u Update source via svn before build
 		-w Swap size in MB, default no swap (0)
 		-k Kernel configuration to use (default RPI-B)
+</pre>
+
+Determining Your SD Card Size
+-----------------------------
+Use diskinfo(8) to get your card size in Bytes, and divide by 1024 twice to get your real card size in 
+MB. Use that size, and the script will calculate the rest in order to allow for boot partition, swap, and 
+alignment.  On a mac, use diskutil.  Here are some examples:
+
+FreeBSD:
+<pre>
+echo $[ $( sudo diskinfo -v mmcsd0 | grep 'mediasize in bytes' | awk '{print $1}' ) / 1024 / 1024 ]
+</pre>
+
+On a Mac:
+<pre>
+echo $[ $( diskutil info disk1 | grep 'Total Size:' | awk '{print substr($5,2)}' ) / 1024 / 1024 ]
 </pre>
 
 Extracting and Writing Images
