@@ -322,6 +322,15 @@ if [ $BUILD == 'YES' ]; then
 fi
 
 #
+#	Check for build error
+#
+if [ $? -ne 0 ] ; then
+    echo "There was a build error, stopping."
+    exit 1;
+fi
+
+
+#
 # Prepare Image File
 #
 if [ $PREFLIGHT ]; then
