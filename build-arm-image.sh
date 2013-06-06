@@ -409,7 +409,7 @@ sshd_enable="YES"
 devd_enable="YES"
 sendmail_enable="NONE"
 ntpd_enable="YES"
-ntpdate_flags="-b 0.us.pool.ntp.org"
+ntpdate_flags="-bug 0.us.pool.ntp.org"
 __EORC__
 
 # Populate /etc/ttys
