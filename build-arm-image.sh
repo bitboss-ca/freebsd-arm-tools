@@ -14,7 +14,8 @@ BUILD='YES'
 NOTIFY='NO'
 WITHPORTS='NO'
 KERNCONF='RPI-B'
-SVNBRANCH='svn://svn.freebsd.org/base/head/'
+SOURCEDIR=/src/FreeBSD/stable/10
+SVNBRANCH='svn://svn.freebsd.org/base/stable/10/'
 UBOOT=http://people.freebsd.org/~gonzo/arm/rpi/freebsd-uboot-20130201.tar.gz
 HOSTNAME=raspberry-pi
 UFS_JOURNAL_SIZE=32		# MB
@@ -34,6 +35,7 @@ usage() {
 		-m Email address to notify
 		-p Install the ports tree
 		-q Quiet, no pre-flight check
+		-r Source root: path to find/checkout the source code.
 		-s Image size.  Default value 1, default unit GB, add M for MB.
 		-u Update source via svn before build
 		-w Swap size in MB, default no swap (0)
@@ -44,7 +46,7 @@ usage() {
 #
 # Options
 #
-while getopts ":bg:hm:pqs:uw:k:" opt; do
+while getopts ":bg:hm:pqs:uw:k:r:v:" opt; do
 	case $opt in
 		b)
 			BUILD='NO'
@@ -68,11 +70,17 @@ while getopts ":bg:hm:pqs:uw:k:" opt; do
 		q)
 			PREFLIGHT=''
 			;;
+		r)
+			SOURCEDIR=$OPTARG
+			;;
 		s)
 			IMG_SIZE=$OPTARG
 			;;
 		u)
 			SVN_UPDATE='YES'
+			;;
+		v)
+			SVNBRANCH=$OPTARG
 			;;
 		w)
 			IMG_SWAP_SIZE=$OPTARG
@@ -107,7 +115,7 @@ export MNTDIR=/mnt/rpi
 export IMG=$MAKEOBJDIRPREFIX/bsd-pi.img
 export TARGET_ARCH=armv6
 export KERNCONF=${KERNCONF}
-export SRCROOT=/src/FreeBSD/head
+export SRCROOT=${SOURCEDIR}
 export MAKESYSPATH=$SRCROOT/share/mk
 export MAKEOBJDIRPREFIX=/src/FreeBSD/obj
 
