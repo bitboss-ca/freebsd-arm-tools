@@ -38,6 +38,7 @@ usage() {
 		-r Source root: path to find/checkout the source code.
 		-s Image size.  Default value 1, default unit GB, add M for MB.
 		-u Update source via svn before build
+		-v Subversion branch URL
 		-w Swap size in MB, default no swap (0)
 		-k Kernel configuration file (default RPI-B)
 		"

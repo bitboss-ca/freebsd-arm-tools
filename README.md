@@ -43,9 +43,11 @@ UPDATE: Image size can now be specified in MB in so you can tailor your image ex
 		-h This help
 		-m Email address to notify
 		-p Install the ports tree
+		-r Source root: path to find/checkout the source code.
 		-q Quiet, no pre-flight check
 		-s Image size.  Default value 1, default unit GB, add M for MB.
 		-u Update source via svn before build
+		-v Subversion branch URL
 		-w Swap size in MB, default no swap (0)
 		-k Kernel configuration to use (default RPI-B)
 </pre>
