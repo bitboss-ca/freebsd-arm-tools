@@ -42,6 +42,7 @@ UPDATE: Image size can now be specified in MB in so you can tailor your image ex
 		-g GPU Mem Size in MB, must be 32,64,128 (?)
 		-h This help
 		-m Email address to notify
+		-M Enable MALLOC_PRODUCTION
 		-p Install the ports tree
 		-r Source root: path to find/checkout the source code.
 		-q Quiet, no pre-flight check

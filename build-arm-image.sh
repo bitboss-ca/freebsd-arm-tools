@@ -20,6 +20,7 @@ UBOOT=http://people.freebsd.org/~gonzo/arm/rpi/freebsd-uboot-20130201.tar.gz
 HOSTNAME=raspberry-pi
 UFS_JOURNAL_SIZE=32		# MB
 MBR_SIZE=32						# MB
+ENABLE_MALLOC_PRODUCTION=''
 
 #
 # Usage Message
@@ -33,6 +34,7 @@ usage() {
 		-g GPU Mem Size in MB, must be 32,64,128 (?)
 		-h This help
 		-m Email address to notify
+		-M Enable MALLOC_PRODUCTION
 		-p Install the ports tree
 		-q Quiet, no pre-flight check
 		-r Source root: path to find/checkout the source code.
@@ -61,6 +63,9 @@ while getopts ":bg:hm:pqs:uw:k:r:v:" opt; do
 			;;
 		m)
 			NOTIFY=$OPTARG
+			;;
+		M)
+			ENABLE_MALLOC_PRODUCTION='MALLOC_PRODUCTION="YES"'
 			;;
 		p)
 			WITHPORTS='YES'
@@ -212,7 +217,8 @@ IMG_FBSD_SIZE=$(( ( $IMG_SIZE_COUNT ) - $MBR_SIZE - $IMG_SWAP_SIZE - 2 ))
 #
 #	Image Filename
 #
-IMG_NAME="FreeBSD-HEAD-r${CURRENT_SVN_REVISION}-ARMv6-${KERNCONF}-${IMG_SIZE}.img"
+BRANCH_LABEL=$( echo $SVNBRANCH  | sed 's/svn:\/\/svn.freebsd.org\/base\///' | sed 's/\/$//' | sed 's/\///' )
+IMG_NAME="FreeBSD-${BRANCH_LABEL}-r${CURRENT_SVN_REVISION}-ARMv6-${KERNCONF}-${IMG_SIZE}.img"
 
 #
 #	Pre-Flight Confirmation
@@ -317,7 +323,7 @@ if [ $BUILD == 'YES' ]; then
 	if [ ! $NOTIFY == 'NO' ]; then
 		echo `date "+%F %r"` | mail -s "${IMG_NAME}: Kernel Build Complete" $NOTIFY
 	fi
-	make -C $SRCROOT MALLOC_PRODUCTION=yes buildworld
+	make -C $SRCROOT $ENABLE_MALLOC_PRODUCTION buildworld
 	if [ ! $NOTIFY == 'NO' ]; then
 		echo `date "+%F %r"` | mail -s "${IMG_NAME}: World Build Complete" $NOTIFY
 	fi
