@@ -118,12 +118,12 @@ export GPU_MEM=$GPU_MEM_SIZE
 export PI_USER=pi
 export PI_USER_PASSWORD=raspberry
 export MNTDIR=/mnt/rpi
+export MAKEOBJDIRPREFIX=/src/FreeBSD/obj
 export IMG=$MAKEOBJDIRPREFIX/bsd-pi.img
 export TARGET_ARCH=armv6
 export KERNCONF=${KERNCONF}
 export SRCROOT=${SOURCEDIR}
 export MAKESYSPATH=$SRCROOT/share/mk
-export MAKEOBJDIRPREFIX=/src/FreeBSD/obj
 
 
 #
