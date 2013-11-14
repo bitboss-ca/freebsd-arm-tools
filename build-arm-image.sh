@@ -7,6 +7,7 @@ set -e
 PREFLIGHT='YES'
 IMG_SIZE=1
 IMG_SWAP_SIZE=0
+IMG_TMP_NAME='bsd-pi.img'
 GPU_MEM_SIZE=128			# MB
 SVN_CHECKOUT='NO'
 SVN_UPDATE='NO'
@@ -129,7 +130,7 @@ export PI_USER=pi
 export PI_USER_PASSWORD=raspberry
 export MNTDIR=/mnt/rpi
 export MAKEOBJDIRPREFIX=/src/FreeBSD/obj
-export IMG=$MAKEOBJDIRPREFIX/bsd-pi.img
+export IMG=$MAKEOBJDIRPREFIX/$IMG_TMP_NAME
 export TARGET_ARCH=armv6
 export KERNCONF=${KERNCONF}
 export SRCROOT=${SOURCEDIR}
@@ -260,7 +261,7 @@ if [ $PREFLIGHT ]; then
 	echo "             SRCROOT: $SRCROOT"
 	echo "         MAKESYSPATH: $MAKESYSPATH"
 	echo "    MAKEOBJDIRPREFIX: $MAKEOBJDIRPREFIX"
-	echo "                 IMG: $IMG"
+	echo "            TEMP IMG: $IMG"
 	echo "         TARGET_ARCH: $TARGET_ARCH"
 	echo "            KERNCONF: $KERNCONF"
 	echo "              KERNEL: $KERNEL"
@@ -477,9 +478,10 @@ if [ ! $NOTIFY == 'NO' ]; then
 fi
 
 #
-# Move the image into the current dir, create checksum and tar it up
+# Create checksum and tar up the image
 #
-mv $IMG $IMG_NAME
+cd $MAKEOBJDIRPREFIX
+mv $IMG_TMP_NAME $IMG_NAME
 
 # SHA Sum
 shasum -a256 $IMG_NAME > $IMG_NAME.sha256.txt
@@ -490,6 +492,13 @@ tar -cvzf $IMG_NAME.tgz $IMG_NAME*
 # Clean Up
 rm $IMG_NAME
 rm $IMG_NAME.sha256.txt
+
+#
+#	Move the tarred image to current dir
+#
+cd -
+echo "Moving ${MAKEOBJDIRPREFIX}/${IMG_NAME}.tgz >>> ./${IMG_NAME}.tgz"
+mv "${MAKEOBJDIRPREFIX}/${IMG_NAME}.tgz" ./${IMG_NAME}.tgz
 
 if [ ! $NOTIFY == 'NO' ]; then
 	echo `date "+%F %r"` | mail -s "${IMG_NAME}: Image Ready" $NOTIFY
