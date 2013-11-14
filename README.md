@@ -98,12 +98,16 @@ $ diskutil list
    1:             Windows_FAT_32                         15.9 GB    disk2s1
 </pre>
 <pre>
-$ disktuil unmountDisk /dev/disk2
+$ diskutil unmountDisk /dev/disk2
 Unmount of all volumes on disk2 was successful
 </pre>
 <pre>
 $ sudo dd if=FreeBSD-HEAD-r247020-ARMv6-1G.img of=/dev/disk2 bs=1m
-Password:
+</pre>
+
+Note that on a Mac you may get much better performance by writing to the raw disk device:
+<pre>
+$ sudo dd if=FreeBSD-HEAD-r247020-ARMv6-1G.img of=/dev/rdisk2 bs=1m
 </pre>
 
 Resizing Partitions
