@@ -33,6 +33,7 @@ usage() {
 		-b No build, just create image from previously-built source
 		-g GPU Mem Size in MB, must be 32,64,128 (?)
 		-h This help
+		-k Kernel configuration file (default RPI-B)
 		-m Email address to notify
 		-M Enable MALLOC_PRODUCTION
 		-p Install the ports tree
@@ -42,7 +43,6 @@ usage() {
 		-u Update source via svn before build
 		-v Subversion branch URL
 		-w Swap size in MB, default no swap (0)
-		-k Kernel configuration file (default RPI-B)
 		"
 }
 
@@ -61,6 +61,9 @@ while getopts ":bg:hm:pqs:uw:k:r:v:" opt; do
 			usage
 			exit
 			;;
+		k)
+			KERNCONF=$OPTARG
+			;;
 		m)
 			NOTIFY=$OPTARG
 			;;
@@ -69,9 +72,6 @@ while getopts ":bg:hm:pqs:uw:k:r:v:" opt; do
 			;;
 		p)
 			WITHPORTS='YES'
-			;;
-		k)
-			KERNCONF=$OPTARG
 			;;
 		q)
 			PREFLIGHT=''
@@ -118,12 +118,12 @@ export GPU_MEM=$GPU_MEM_SIZE
 export PI_USER=pi
 export PI_USER_PASSWORD=raspberry
 export MNTDIR=/mnt/rpi
+export MAKEOBJDIRPREFIX=/src/FreeBSD/obj
 export IMG=$MAKEOBJDIRPREFIX/bsd-pi.img
 export TARGET_ARCH=armv6
 export KERNCONF=${KERNCONF}
 export SRCROOT=${SOURCEDIR}
 export MAKESYSPATH=$SRCROOT/share/mk
-export MAKEOBJDIRPREFIX=/src/FreeBSD/obj
 
 
 #
