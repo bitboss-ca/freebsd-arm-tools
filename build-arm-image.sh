@@ -284,7 +284,7 @@ cd $SRCROOT
 NEW_SVN_REVISION=$(svn info |grep '^Revision' | awk '{print $2}')
 cd -
 if [ "${NEW_SVN_REVISION}" !=  "${CURRENT_SVN_REVISION}" ]; then
-	IMG_NAME="FreeBSD-HEAD-r${NEW_SVN_REVISION}-ARMv6-${KERNCONF}-${IMG_SIZE}.img"
+	IMG_NAME="FreeBSD-${BRANCH_LABEL}-r${NEW_SVN_REVISION}-ARMv6-${KERNCONF}-${IMG_SIZE}.img"
 	if [ ! $NOTIFY == 'NO' ]; then
 	        echo `date "+%F %r"` | mail -s "Source checkout / update complete, new name: ${IMG_NAME}" $NOTIFY
 	fi
