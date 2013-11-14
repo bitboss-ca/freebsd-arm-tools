@@ -11,6 +11,8 @@ GPU_MEM_SIZE=128			# MB
 SVN_CHECKOUT='NO'
 SVN_UPDATE='NO'
 BUILD='YES'
+BUILDKERNEL='YES'
+BUILDWORLD='YES'
 NOTIFY='NO'
 WITHPORTS='NO'
 KERNCONF='RPI-B'
@@ -34,6 +36,7 @@ usage() {
 		-g GPU Mem Size in MB, must be 32,64,128 (?)
 		-h This help
 		-k Kernel configuration file (default RPI-B)
+		-K Do not build the kernel, use previously-built
 		-m Email address to notify
 		-M Enable MALLOC_PRODUCTION
 		-p Install the ports tree
@@ -43,13 +46,14 @@ usage() {
 		-u Update source via svn before build
 		-v Subversion branch URL
 		-w Swap size in MB, default no swap (0)
+		-W Do not build world, use previously-built
 		"
 }
 
 #
 # Options
 #
-while getopts ":bg:hm:pqs:uw:k:r:v:" opt; do
+while getopts ":bg:hk:Km:pqr:s:uv:w:W" opt; do
 	case $opt in
 		b)
 			BUILD='NO'
@@ -63,6 +67,9 @@ while getopts ":bg:hm:pqs:uw:k:r:v:" opt; do
 			;;
 		k)
 			KERNCONF=$OPTARG
+			;;
+		K)
+			BUILDKERNEL='NO'
 			;;
 		m)
 			NOTIFY=$OPTARG
@@ -90,6 +97,9 @@ while getopts ":bg:hm:pqs:uw:k:r:v:" opt; do
 			;;
 		w)
 			IMG_SWAP_SIZE=$OPTARG
+			;;
+		W)
+			BUILDWORLD='NO'
 			;;
 		\?)
 			echo "Invalid option: -$OPTARG" >&2
@@ -243,6 +253,8 @@ if [ $PREFLIGHT ]; then
 	echo "     SOURCE CHECKOUT: $SVN_CHECKOUT"
 	echo "       SOURCE UPDATE: $SVN_UPDATE"
 	echo "               BUILD: $BUILD"
+	echo "        BUILD KERNEL: $BUILDKERNEL"
+	echo "         BUILD WORLD: $BUILDWORLD"
 	echo "       INSTALL PORTS: $WITHPORTS"
 	echo "              MNTDIR: $MNTDIR"
 	echo "             SRCROOT: $SRCROOT"
@@ -315,17 +327,22 @@ fi
 #
 if [ $BUILD == 'YES' ]; then
 	
-	make -C $SRCROOT kernel-toolchain
-	if [ ! $NOTIFY == 'NO' ]; then
-		echo `date "+%F %r"` | mail -s "${IMG_NAME}: Kernel ToolChain Build Complete" $NOTIFY
-	fi
-	make -C $SRCROOT KERNCONF=$KERNCONF WITH_FDT=yes buildkernel
-	if [ ! $NOTIFY == 'NO' ]; then
-		echo `date "+%F %r"` | mail -s "${IMG_NAME}: Kernel Build Complete" $NOTIFY
-	fi
-	make -C $SRCROOT $ENABLE_MALLOC_PRODUCTION buildworld
-	if [ ! $NOTIFY == 'NO' ]; then
-		echo `date "+%F %r"` | mail -s "${IMG_NAME}: World Build Complete" $NOTIFY
+	if [ $BUILDKERNEL == 'YES' ]; then
+		make -C $SRCROOT kernel-toolchain
+		if [ ! $NOTIFY == 'NO' ]; then
+			echo `date "+%F %r"` | mail -s "${IMG_NAME}: Kernel ToolChain Build Complete" $NOTIFY
+		fi
+		make -C $SRCROOT KERNCONF=$KERNCONF WITH_FDT=yes buildkernel
+		if [ ! $NOTIFY == 'NO' ]; then
+			echo `date "+%F %r"` | mail -s "${IMG_NAME}: Kernel Build Complete" $NOTIFY
+		fi
+	fi	
+	
+	if [ $BUILDWORLD == 'YES' ]; then
+		make -C $SRCROOT $ENABLE_MALLOC_PRODUCTION buildworld
+		if [ ! $NOTIFY == 'NO' ]; then
+			echo `date "+%F %r"` | mail -s "${IMG_NAME}: World Build Complete" $NOTIFY
+		fi
 	fi
 	
 	buildenv=`make -C $SRCROOT buildenvvars`

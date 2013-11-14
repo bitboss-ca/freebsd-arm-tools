@@ -41,6 +41,8 @@ UPDATE: Image size can now be specified in MB in so you can tailor your image ex
 		-b No build, just create image from previously-built source
 		-g GPU Mem Size in MB, must be 32,64,128 (?)
 		-h This help
+		-k Kernel configuration to use (default RPI-B)
+		-K Do not build the kernel, use previously-built
 		-m Email address to notify
 		-M Enable MALLOC_PRODUCTION
 		-p Install the ports tree
@@ -50,7 +52,7 @@ UPDATE: Image size can now be specified in MB in so you can tailor your image ex
 		-u Update source via svn before build
 		-v Subversion branch URL
 		-w Swap size in MB, default no swap (0)
-		-k Kernel configuration to use (default RPI-B)
+		-W Do not build world, use previously-built
 </pre>
 
 Determining Your SD Card Size
