@@ -35,6 +35,24 @@ UPDATE: Script now includes options to add a swap slice and to install ports tre
 
 UPDATE: Image size can now be specified in MB in so you can tailor your image exactly to your card size.  See Determining Your SD Card Size.
 
+You may wish to put the following in your /etc/make.conf file to use clang for building (you should refer to the wiki pages [New C++ Stack](https://wiki.freebsd.org/NewC++Stack) and [Building FreeBSD with clang/llvm](https://wiki.freebsd.org/BuildingFreeBSDWithClang) for more info):
+<pre>
+#
+#       New C++ Stack
+#       https://wiki.freebsd.org/NewC++Stack
+#
+WITH_LIBCPLUSPLUS=yes
+
+#
+#       Building FreeBSD with clang/llvm
+#       https://wiki.freebsd.org/BuildingFreeBSDWithClang
+#
+CC=clang
+CXX=clang++
+CPP=clang-cpp
+</pre>
+
+Here is a list of the build script options:
 <pre>
 	Usage: # ${0} [options]
 
@@ -116,104 +134,7 @@ It's nice to use 1GB images because they are small and take less time to write t
 once you boot your image, you will find you only have access to 1GB, even if your card is say 16GB in
 size.  So, next step is to resize (expand) your FreeBSD installation to fit your SD card.
 
-### Requirements
-You cannot resize the partitions (slices) on your SD card while they are mounted, so you will have to
-plug your card into a reader on another machine that has gpart.  I used a FreeBSD 8.3 RELEASE machine 
-for the example below.  I started with a 2G image written to a 16G SDHC card.
-
-### Caution
-It's important that you read and _understand_ these instructions before you dive in.  If you follow 
-to the bottom, but don't get it, do a little research.  Start by reading the FreeBSD man pages for
-gpart and growfs.
-
-### Procedure
-We have our SDHC card plugged in to our host machine with a 2GB image written to it.  Let's take a 
-look...
-
-```bash
-enzo# gpart show
-
-	...SNIPPED HOST BOOT DRIVE OUTPUT...
-
-=>      63  31047617  da1  MBR  (14G)
-        63     65520    1  !12  [active]  (32M)
-     65583   4128705    2  freebsd  (2G)
-   4194288  26853392       - free -  (12G)
-
-=>    0  65520  da1s1  EBR  (32M)
-      0  65520         - free -  (32M)
-
-=>      0  4128705  da1s2  BSD  (2G)
-        0  4128705      1  freebsd-ufs  (2G)
-
-=>    0  65520  msdosfs/BOOT  EBR  (32M)
-      0  65520                - free -  (32M)
-
-=>      0  4128705  ufsid/5125063d5dfe4cf0  BSD  (2G)
-        0  4128705                       1  freebsd-ufs  (2G)
-```
-
-First thing we need to do is effectively expand index 2 of da1 (above) to use up the free 12G 
-that appears after it. So (below), we give the command to resize index 2 `-i2` of `da1`.  Note 
-that `-a1` tells gpart to align to 1MB.
-
-```bash
-enzo# gpart resize -a1 -i2 da1
-da1s2 resized
-
-enzo# gpart show
-
-	...SNIPPED HOST BOOT DRIVE OUTPUT...
-
-enzo# gpart show da1
-=>      63  31047617  da1  MBR  (14G)
-        63     65520    1  !12  [active]  (32M)
-     65583  30982077    2  freebsd  (14G)
-  31047660        20       - free -  (10k)
-
-enzo# gpart show da1s2
-=>      0  4128705  da1s2  BSD  (14G)
-        0  4128705      1  freebsd-ufs  (2G)
-```
-
-Now we see (above) that free space is available to index 2 of da1 (da1s2).  But, the freebsd-ufs 
-slice is still only 2G.  So, (below) we grow da1s2...
-
-```bash
-enzo# growfs da1s2
-We strongly recommend you to make a backup before growing the Filesystem
-
- Did you backup your data (Yes/No) ? Yes
-new file systemsize is: 3872759 frags
-Warning: 16312 sector(s) cannot be allocated.
-growfs: 15120.0MB (30965760 sectors) block size 32768, fragment size 4096
-	using 30 cylinder groups of 504.00MB, 16128 blks, 64512 inodes.
-	with soft updates
-super-block backups (for fsck -b #) at:
- 4128960, 5161152, 6193344, 7225536, 8257728, 9289920, 10322112, 11354304, 12386496, 13418688, 14450880, 15483072, 16515264, 17547456, 18579648, 19611840,
- 20644032, 21676224, 22708416, 23740608, 24772800, 25804992, 26837184, 27869376, 28901568, 29933760
-enzo# gpart show da1s2
-=>       0  30982077  da1s2  BSD  (14G)
-         0   4128705      1  freebsd-ufs  (2G)
-   4128705  26853372         - free -  (12G)
-```
-
-<del>At this point we need to stop and think about how large to make the new space.  Note that in the 
-last command we did not specify a size.  By default the growfs command will take up whatever 
-remaining space that it can.  Look at the output above: growfs tells us that some sectors cannot 
-be allocated, and right below that, tells us the size, in megabytes of the new filesystem.  This
-is great, because we are going to use that number to calculate the size of the new freebsd slice.</del>
-
-<del>So, let's say we want to have a 512MB swap space and enlarge the FreeBSD space to use up the rest.  
-now we can take that 15120.0MB reported above, subtract 512MB, and  get 14608.</del>
-
-I have not been able to get the above to work reliably, at this time, I all know that works is to expand 
-the freebsd-ufs slice to take up the new space.  More on adding a swap space later.
-
-```bash
-enzo# gpart resize -a1 -i1 da1s2
-da1s2a resized
-```
+There is a good example of how to do this on the [FreeBSD Wiki Raspberry Pi Page](https://wiki.freebsd.org/FreeBSD/arm/Raspberry%20Pi).
 
 Example conf files
 -------------------
