@@ -484,14 +484,14 @@ cd $MAKEOBJDIRPREFIX
 mv $IMG_TMP_NAME $IMG_NAME
 
 # SHA Sum
-shasum -a256 $IMG_NAME > $IMG_NAME.sha256.txt
+shasum $IMG_NAME > $IMG_NAME.sha256.txt
 
 # Tar up the image with its SHA sum
 tar -cvzf $IMG_NAME.tgz $IMG_NAME*
 
 # Clean Up
 rm $IMG_NAME
-rm $IMG_NAME.sha256.txt
+rm $IMG_NAME.sha
 
 #
 #	Move the tarred image to current dir

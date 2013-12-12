@@ -98,7 +98,7 @@ x FreeBSD-HEAD-r247020-ARMv6-1G.img
 x FreeBSD-HEAD-r247020-ARMv6-1G.img.sha256.txt
 </pre>
 <pre>
-$ shasum -a256 FreeBSD-HEAD-r247020-ARMv6-1G.img && cat FreeBSD-HEAD-r247020-ARMv6-1G.img.sha256.txt
+$ shasum FreeBSD-HEAD-r247020-ARMv6-1G.img && cat FreeBSD-HEAD-r247020-ARMv6-1G.img.sha
 9b701bdadfe5ebe31368c1acb930d704f4b611e255fded1d16e9ea48f4940000  FreeBSD-HEAD-r247020-ARMv6-1G.img
 9b701bdadfe5ebe31368c1acb930d704f4b611e255fded1d16e9ea48f4940000  FreeBSD-HEAD-r247020-ARMv6-1G.img
 </pre>
